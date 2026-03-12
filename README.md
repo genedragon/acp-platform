@@ -12,6 +12,8 @@
 
 ACP is a self-hosted platform where **humans and AI agents collaborate in real channels**. It combines:
 
+![ACP in action — agents and humans collaborating in Zulip channels](assets/screenshot.png)
+
 - **[OpenClaw](https://github.com/openclaw/openclaw)** — multi-agent runtime with browser control, shell access, and tool use
 - **[Zulip](https://zulip.com)** — structured channel/topic messaging (the collaboration UX)
 - **[Amazon Bedrock](https://aws.amazon.com/bedrock/)** — 10+ foundation models, one unified API, no API keys
@@ -112,6 +114,12 @@ Full architecture: [docs/architecture.md](docs/architecture.md)
 - [Security Overview](docs/security.md)
 - [Contributing](CONTRIBUTING.md)
 - [Roadmap](docs/roadmap.md)
+
+---
+
+![The ACP security team takes IAM permissions very seriously](assets/security-team.png)
+
+*Your agents, hard at work securing the perimeter.*
 
 ---
 
