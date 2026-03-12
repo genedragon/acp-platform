@@ -96,13 +96,17 @@ Parameters:
 
   ZulipDomain:
     Type: String
-    Description: "Domain for your Zulip server (e.g. zulip.example.com or your EC2 public DNS). Used for SSL cert and realm configuration."
+    Description: "Domain for your Zulip server (e.g. zulip.example.com). Used for SSL cert and realm configuration. Leave empty to use EC2 public DNS."
     Default: ""
+    AllowedPattern: "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,}$|^$"
+    ConstraintDescription: "Must be a valid domain name (e.g. zulip.example.com) or empty"
 
   ZulipAdminEmail:
     Type: String
     Description: "Email address for the initial Zulip admin account."
     Default: ""
+    AllowedPattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$|^$"
+    ConstraintDescription: "Must be a valid email address or empty"
 
   SESRegion:
     Type: String
@@ -118,6 +122,8 @@ Parameters:
     Type: String
     Description: "Verified SES sender email for Zulip notifications."
     Default: ""
+    AllowedPattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$|^$"
+    ConstraintDescription: "Must be a valid email address or empty"
 
 Conditions:
   HasKeyPair: !Not [!Equals [!Ref KeyPairName, "none"]]
@@ -257,18 +263,20 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              # Bedrock — invoke models
+              # Bedrock — invoke the configured model only
               - Effect: Allow
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:InvokeModelWithResponseStream
-                Resource: "*"
-              # SES — send email (Zulip notifications)
+                Resource:
+                  - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/${OpenClawModel}"
+              # SES — send email from the configured identity only
               - Effect: Allow
                 Action:
                   - ses:SendEmail
                   - ses:SendRawEmail
-                Resource: "*"
+                Resource:
+                  - !Sub "arn:aws:ses:${SESRegion}:${AWS::AccountId}:identity/${SESFromEmail}"
               # S3 — workspace bucket (scoped to stack)
               - Effect: Allow
                 Action:
@@ -441,8 +449,8 @@ Resources:
 
           # Download and run Zulip installer
           ZULIP_VERSION="10.0-0"
-          curl -fLO "https://download.zulip.com/server/zulip-server-${!ZULIP_VERSION}.tar.gz"
-          tar -xf "zulip-server-${!ZULIP_VERSION}.tar.gz"
+          curl -fLO "https://download.zulip.com/server/zulip-server-${ZULIP_VERSION}.tar.gz"
+          tar -xf "zulip-server-${ZULIP_VERSION}.tar.gz"
 
           ZULIP_DOMAIN="${ZulipDomain}"
           ZULIP_ADMIN="${ZulipAdminEmail}"
@@ -452,11 +460,11 @@ Resources:
               http://169.254.169.254/latest/meta-data/public-hostname 2>/dev/null || echo "localhost")
           fi
 
-          "zulip-server-${!ZULIP_VERSION}/scripts/setup/install" \
+          "zulip-server-${ZULIP_VERSION}/scripts/setup/install" \
             --certbot-skip \
             --self-signed-cert \
             --hostname="$ZULIP_DOMAIN" \
-            --email="${!ZULIP_ADMIN:-admin@$ZULIP_DOMAIN}"
+            --email="${ZULIP_ADMIN:-admin@$ZULIP_DOMAIN}"
 
           # Configure SES email backend
           if [ -n "${SESFromEmail}" ]; then
