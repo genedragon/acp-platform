@@ -1,0 +1,6 @@
+{
+  "bucketName": "your-bucket-name",
+  "region": "us-east-1",
+  "defaultExpirationHours": 24,
+  "maxUploadSizeMB": 100
+}

@@ -1,0 +1,207 @@
+{
+  "_comment": "Navigation Guide — Instruction Site Template. Deploy this alongside any presentation to give users a quick orientation. 4 slides, self-contained, includes animation demo and credits.",
+  "_schema_version": "1.1",
+
+  "meta": {
+    "title": "How to Navigate This Presentation",
+    "author": "OpenClaw Webmaster Skill",
+    "aspect_ratio": "16:9",
+    "theme": "black",
+    "transition": "slide",
+    "transition_speed": "fast",
+    "colors": {
+      "background": "#0d1117",
+      "text_primary": "#e6edf3",
+      "text_muted": "#8b949e",
+      "accent_1": "#58a6ff",
+      "accent_2": "#3fb950",
+      "accent_3": "#bc8cff",
+      "highlight": "#ffa657",
+      "card_bg": "#161b22",
+      "card_border": "#30363d"
+    },
+    "reveal_config": {
+      "hash": true,
+      "controls": true,
+      "controlsTutorial": true,
+      "progress": true,
+      "slideNumber": "c/t",
+      "overview": true,
+      "touch": true,
+      "navigationMode": "default"
+    }
+  },
+
+  "columns": [
+
+    {
+      "id": "col-1",
+      "slides": [
+        {
+          "id": "welcome",
+          "type": "title",
+          "layout": "centered-with-nav-diagram",
+          "content": {
+            "headline": "Welcome",
+            "subheadline": "Here's how to get around.",
+            "nav_diagram": {
+              "type": "arrow-grid",
+              "description": "Center label: 'You are here'. Left arrow + label: '← Previous topic'. Right arrow + label: '→ Next topic'. Down arrow + label: '↓ Deeper dive (on some slides)'.",
+              "center": "📍 You are here",
+              "left":   "← Previous topic",
+              "right":  "→ Next topic",
+              "down":   "↓ Deeper dive"
+            },
+            "footer": "Use arrow keys, click the controls, or swipe on mobile."
+          },
+          "speaker_notes": "Orientation slide. Point out the controls in the corner."
+        }
+      ]
+    },
+
+    {
+      "id": "col-2",
+      "_has_deep_dive": true,
+      "_deep_dive_hint": "↓ try going deeper",
+      "slides": [
+        {
+          "id": "nav-main",
+          "type": "section-intro",
+          "layout": "two-columns",
+          "content": {
+            "headline": "Left & Right: The Main Story",
+            "columns": [
+              {
+                "icon": "←→",
+                "label": "Horizontal Navigation",
+                "description": "The left and right arrows move you through the main topics. This is the primary flow — follow it in order for the full story.",
+                "color": "#58a6ff"
+              },
+              {
+                "icon": "↓",
+                "label": "Deep Dives",
+                "description": "Some slides have a ↓ indicator at the bottom. That means there's optional deeper content below. Press ↓ to explore, ↑ to come back.",
+                "color": "#3fb950"
+              }
+            ]
+          },
+          "speaker_notes": "Left and right is the main flow. Down is optional depth."
+        },
+        {
+          "id": "nav-deepdive",
+          "type": "deep-dive",
+          "layout": "centered",
+          "content": {
+            "headline": "You found a deep dive! ↑ to return.",
+            "text": [
+              "Deep dive slides live below the main topic.",
+              "They have more detail for curious viewers.",
+              "Press ↑ to go back up to the main flow.",
+              "Press → to skip to the next top-level topic."
+            ],
+            "animations": [
+              {
+                "click": 1,
+                "elements": ["text[0]", "text[1]"],
+                "effect": "appear"
+              },
+              {
+                "click": 2,
+                "elements": ["text[2]", "text[3]"],
+                "effect": "appear"
+              }
+            ]
+          },
+          "speaker_notes": "This is what a deep dive looks like. [CLICK] first two points appear. [CLICK] navigation tips appear."
+        }
+      ]
+    },
+
+    {
+      "id": "col-3",
+      "slides": [
+        {
+          "id": "animations",
+          "type": "content",
+          "layout": "left-text-right-demo",
+          "content": {
+            "headline": "Animations: Content That Unfolds",
+            "text": [
+              "Some slides reveal content step by step.",
+              "Each click advances to the next point.",
+              "This helps the presenter control the pace.",
+              "You just saw all four — that was the demo."
+            ],
+            "animations": [
+              {
+                "click": 1,
+                "elements": ["text[0]"],
+                "effect": "appear"
+              },
+              {
+                "click": 2,
+                "elements": ["text[1]"],
+                "effect": "appear"
+              },
+              {
+                "click": 3,
+                "elements": ["text[2]"],
+                "effect": "appear"
+              },
+              {
+                "click": 4,
+                "elements": ["text[3]"],
+                "effect": "appear"
+              }
+            ],
+            "footer_note": "Each bullet appeared on a separate click — that's the animation schema in action."
+          },
+          "speaker_notes": "Demo the animation. Click once per bullet. After all four: 'That's it — same pattern used throughout the presentation.'"
+        }
+      ]
+    },
+
+    {
+      "id": "col-4",
+      "slides": [
+        {
+          "id": "credits",
+          "type": "credits",
+          "layout": "centered-credits",
+          "content": {
+            "headline": "Built With",
+            "credits": [
+              {
+                "icon": "🎯",
+                "name": "reveal.js",
+                "description": "Open-source HTML presentation framework",
+                "link": "https://revealjs.com",
+                "license": "MIT License",
+                "color": "#58a6ff"
+              },
+              {
+                "icon": "🦞",
+                "name": "OpenClaw",
+                "description": "Agentic framework — the engine behind this deployment",
+                "link": "https://github.com/openclaw/openclaw",
+                "license": "Open Source",
+                "color": "#bc8cff"
+              },
+              {
+                "icon": "🛡️",
+                "name": "Webmaster Skill",
+                "description": "Presentation generation & CloudFront deployment",
+                "link": "https://clawhub.com",
+                "license": "v6.1",
+                "color": "#3fb950"
+              }
+            ],
+            "footer": "This instruction guide was itself built from a JSON template — see presentation-starter.json"
+          },
+          "speaker_notes": "Quick credits. Note that this guide was built from a JSON template — the same template available to anyone building a presentation with this skill."
+        }
+      ]
+    }
+
+  ]
+}

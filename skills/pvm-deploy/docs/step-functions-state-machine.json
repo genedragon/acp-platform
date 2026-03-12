@@ -1,0 +1,288 @@
+{
+  "Comment": "Permissions Vending Machine - Complete workflow with guaranteed expiration",
+  "StartAt": "InjectExecutionContext",
+  "States": {
+    "InjectExecutionContext": {
+      "Type": "Pass",
+      "Comment": "Add execution ARN to the request data",
+      "Parameters": {
+        "execution_arn.$": "$$.Execution.Id",
+        "execution_name.$": "$$.Execution.Name",
+        "requester.$": "$.requester",
+        "permissions_requested.$": "$.permissions_requested",
+        "expiration_minutes.$": "$.expiration_minutes",
+        "submitted_at.$": "$.submitted_at",
+        "source_ip.$": "$.source_ip"
+      },
+      "Next": "StoreRequest"
+    },
+    "StoreRequest": {
+      "Type": "Task",
+      "Resource": "${StoreRequestFunctionArn}",
+      "Comment": "Store initial request in DynamoDB with status PENDING",
+      "ResultPath": "$.stored_request",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "HandleStoreFailure"
+        }
+      ],
+      "Next": "SendApprovalEmail"
+    },
+
+    "SendApprovalEmail": {
+      "Type": "Pass",
+      "Comment": "Placeholder - This state is now integrated with WaitForApproval",
+      "Next": "WaitForApproval"
+    },
+
+    "WaitForApproval": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Comment": "Send approval email and wait for approval or denial via task token callback",
+      "Parameters": {
+        "FunctionName": "${SendApprovalEmailFunctionArn}",
+        "Payload": {
+          "taskToken.$": "$$.Task.Token",
+          "request.$": "$"
+        }
+      },
+      "ResultPath": "$.approval",
+      "TimeoutSeconds": 3600,
+      "Catch": [
+        {
+          "ErrorEquals": ["States.Timeout"],
+          "ResultPath": "$.error",
+          "Next": "HandleApprovalTimeout"
+        },
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "HandleApprovalFailure"
+        }
+      ],
+      "Next": "CheckApprovalDecision"
+    },
+
+    "CheckApprovalDecision": {
+      "Type": "Choice",
+      "Comment": "Branch based on approval or denial",
+      "Choices": [
+        {
+          "Variable": "$.approval.approved",
+          "BooleanEquals": true,
+          "Next": "GrantPermissions"
+        },
+        {
+          "Variable": "$.approval.approved",
+          "BooleanEquals": false,
+          "Next": "DenialComplete"
+        }
+      ],
+      "Default": "HandleInvalidApproval"
+    },
+
+    "GrantPermissions": {
+      "Type": "Task",
+      "Resource": "${GrantPermissionsFunctionArn}",
+      "Comment": "Execute IAM changes and calculate expiration timestamp",
+      "ResultPath": "$.execution",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "IAMException",
+            "ThrottlingException"
+          ],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "HandleGrantFailure"
+        }
+      ],
+      "Next": "WaitForExpiration"
+    },
+
+    "WaitForExpiration": {
+      "Type": "Wait",
+      "Comment": "Pause execution until exact expiration timestamp - NO POLLING!",
+      "TimestampPath": "$.execution.permission_expires_at",
+      "Next": "RevokePermissions"
+    },
+
+    "RevokePermissions": {
+      "Type": "Task",
+      "Resource": "${RevokePermissionsFunctionArn}",
+      "Comment": "Detach IAM policies at expiration time",
+      "ResultPath": "$.revocation",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "IAMException",
+            "ThrottlingException"
+          ],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        },
+        {
+          "ErrorEquals": [
+            "NoSuchEntityException"
+          ],
+          "MaxAttempts": 0,
+          "Comment": "Policy already deleted - not an error"
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "HandleRevocationFailure"
+        }
+      ],
+      "Next": "SuccessComplete"
+    },
+
+    "HandleStoreFailure": {
+      "Type": "Task",
+      "Resource": "${LogFailureFunctionArn}",
+      "Comment": "Critical failure - cannot store request",
+      "Parameters": {
+        "request.$": "$",
+        "error.$": "$.error",
+        "failure_type": "store_failed"
+      },
+      "End": true
+    },
+
+    "HandleApprovalTimeout": {
+      "Type": "Task",
+      "Resource": "${HandleTimeoutFunctionArn}",
+      "Comment": "Approval link expired - send timeout callback",
+      "Parameters": {
+        "request.$": "$",
+        "timeout_reason": "approval_link_expired"
+      },
+      "ResultPath": "$.handled",
+      "Next": "TimeoutComplete"
+    },
+
+    "HandleApprovalFailure": {
+      "Type": "Task",
+      "Resource": "${LogFailureFunctionArn}",
+      "Comment": "Approval process failed unexpectedly",
+      "Parameters": {
+        "request.$": "$",
+        "error.$": "$.error",
+        "failure_type": "approval_failed"
+      },
+      "End": true
+    },
+
+    "HandleInvalidApproval": {
+      "Type": "Task",
+      "Resource": "${LogFailureFunctionArn}",
+      "Comment": "Invalid approval result received",
+      "Parameters": {
+        "request.$": "$",
+        "failure_type": "invalid_approval_result"
+      },
+      "End": true
+    },
+
+    "HandleGrantFailure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Comment": "Update DynamoDB with FAILED status when grant fails",
+      "Parameters": {
+        "TableName": "pvm-requests",
+        "Key": {
+          "request_id": {
+            "S.$": "$.stored_request.request_id"
+          }
+        },
+        "UpdateExpression": "SET #status = :failed, error_message = :error, failed_at = :timestamp",
+        "ExpressionAttributeNames": {
+          "#status": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":failed": { "S": "FAILED" },
+          ":error": { "S.$": "$.error.Cause" },
+          ":timestamp": { "S.$": "$$.State.EnteredTime" }
+        }
+      },
+      "ResultPath": "$.db_update",
+      "Next": "GrantFailureComplete"
+    },
+
+    "HandleRevocationFailure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Comment": "Update DynamoDB with REVOCATION_FAILED status",
+      "Parameters": {
+        "TableName": "pvm-requests",
+        "Key": {
+          "request_id": {
+            "S.$": "$.stored_request.request_id"
+          }
+        },
+        "UpdateExpression": "SET #status = :failed, error_message = :error, failed_at = :timestamp",
+        "ExpressionAttributeNames": {
+          "#status": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":failed": { "S": "REVOCATION_FAILED" },
+          ":error": { "S.$": "$.error.Cause" },
+          ":timestamp": { "S.$": "$$.State.EnteredTime" }
+        }
+      },
+      "ResultPath": "$.db_update",
+      "Next": "RevocationFailureComplete"
+    },
+
+    "SuccessComplete": {
+      "Type": "Succeed",
+      "Comment": "Request completed successfully: approved, granted, and revoked"
+    },
+
+    "DenialComplete": {
+      "Type": "Succeed",
+      "Comment": "Request completed: denied by approver"
+    },
+
+    "TimeoutComplete": {
+      "Type": "Fail",
+      "Error": "ApprovalTimeout",
+      "Cause": "Approval link expired without action"
+    },
+
+    "GrantFailureComplete": {
+      "Type": "Fail",
+      "Error": "IAMExecutionFailed",
+      "Cause": "Unable to grant requested IAM permissions"
+    },
+
+    "RevocationFailureComplete": {
+      "Type": "Fail",
+      "Error": "RevocationFailed",
+      "Cause": "Unable to revoke IAM permissions at expiration"
+    }
+  }
+}

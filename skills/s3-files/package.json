@@ -1,0 +1,26 @@
+{
+  "name": "s3-files",
+  "version": "1.0.0",
+  "description": "Easy file sharing between OpenClaw agents and users via AWS S3",
+  "main": "upload.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "openclaw",
+    "s3",
+    "file-sharing",
+    "aws",
+    "skill"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1000.0",
+    "@aws-sdk/s3-presigned-post": "^3.1000.0",
+    "@aws-sdk/s3-request-presigner": "^3.1000.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
