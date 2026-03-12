@@ -84,7 +84,7 @@ Full architecture: [docs/architecture.md](docs/architecture.md)
 | OpenClaw | [openclaw/openclaw](https://github.com/openclaw/openclaw) | Agent runtime |
 | OpenClaw on AWS | [aws-samples/sample-OpenClaw-on-AWS-with-Bedrock](https://github.com/aws-samples/sample-OpenClaw-on-AWS-with-Bedrock) | CloudFormation deployment |
 | Zulip | [zulip/zulip](https://github.com/zulip/zulip) | Collaboration UI |
-| openclaw-zulip | [genedragon/openclaw-zulip](https://github.com/genedragon/openclaw-zulip) | Zulip ↔ OpenClaw bridge |
+| openclaw-zulip | [genedragon/openclaw-zulip](https://github.com/genedragon/openclaw-zulip) | Native Zulip channel plugin for OpenClaw |
 | PVM | [genedragon/permissions-vending-machine](https://github.com/genedragon/permissions-vending-machine) | Temporary IAM permissions |
 
 ---
