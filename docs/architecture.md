@@ -50,7 +50,7 @@ ACP is a layered platform. Each layer is independently swappable in the future, 
 - **Role:** Human-facing interface. Channels for structured topics, DMs for P2P.
 - **Deployment:** Native install on EC2 (recommended) or Docker
 - **Source:** https://github.com/zulip/zulip (Apache 2.0)
-- **Plugin:** `genedragon/openclaw-zulip` bridges Zulip events to OpenClaw
+- **Plugin:** `genedragon/openclaw-zulip` connects Zulip to OpenClaw via native channel plugin
 
 ### OpenClaw (Agent Runtime)
 - **Role:** Executes AI agents with tools: browser, shell, file, web search, etc.
@@ -119,11 +119,11 @@ See [security.md](security.md) for the full security overview.
 ## Data Flow
 
 1. User posts message in Zulip channel/topic
-2. `openclaw-zulip` bridge receives event via Zulip Bot API
+2. `openclaw-zulip` plugin receives event via Zulip event queue API
 3. Bridge POSTs to OpenClaw Gateway (`/v1/responses`)
 4. Gateway routes to appropriate agent session
 5. Agent processes with tools (Bedrock, browser, S3, etc.)
-6. Agent posts reply back to Zulip via bridge
+6. Agent posts reply back to Zulip via plugin
 7. CloudTrail logs all AWS API calls for audit
 
 ---

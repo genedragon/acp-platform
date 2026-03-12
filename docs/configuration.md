@@ -163,7 +163,7 @@ gateway:
 
 ## Zulip Bot Configuration
 
-The `openclaw-zulip` bridge requires a `.zuliprc` file (never committed to git):
+The `openclaw-zulip` plugin is configured via `openclaw channels add --channel zulip`. Bot credentials are stored in OpenClaw's config (never committed to git):
 
 ```ini
 [api]

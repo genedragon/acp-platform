@@ -98,9 +98,9 @@ npm install
 cp .zuliprc.example .zuliprc
 # Edit .zuliprc with your bot credentials
 
-# Start bridge
+# Start OpenClaw (plugin runs in-process)
 npm start
-# Or: sudo systemctl enable --now openclaw-zulip-bridge
+# Then configure: openclaw channels add --channel zulip
 ```
 
 ### Phase 5: Install Skills
