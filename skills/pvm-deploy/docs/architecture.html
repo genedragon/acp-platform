@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Permissions Vending Machine - architecture</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css" />
+  
+  <style>
+    .markdown-body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 45px;
+    }
+    @media (max-width: 767px) {
+      .markdown-body {
+        padding: 15px;
+      }
+    }
+    body {
+      background-color: #0d1117;
+    }
+    .markdown-body {
+      background-color: #0d1117;
+      color: #c9d1d9;
+    }
+    pre {
+      background-color: #161b22 !important;
+    }
+    code {
+      background-color: #161b22 !important;
+      color: #79c0ff !important;
+    }
+  </style>
+  <script>
+    // Wrap content in markdown-body class
+    window.addEventListener('DOMContentLoaded', function() {
+      document.body.innerHTML = '<article class="markdown-body">' + document.body.innerHTML + '</article>';
+    });
+  </script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Permissions Vending Machine - architecture</h1>
+</header>
+<h1
+id="permissions-vending-machine---architecture-step-functions-edition">Permissions
+Vending Machine - Architecture (Step Functions Edition)</h1>
+<h2 id="overview">Overview</h2>
+<p>The Permissions Vending Machine (PVM) is a self-service IAM
+permissions approval system designed for agentic frameworks. It enables
+AI agents and automated systems to request AWS IAM permissions through
+an API, with human-in-the-loop approval via email, and asynchronous
+callback notification of the result.</p>
+<p><strong>Core Philosophy:</strong> Security-first, asynchronous,
+audit-complete, time-bound with <strong>guaranteed
+expiration</strong>.</p>
+<p><strong>Security Principle:</strong> No permanent permissions. All
+granted permissions automatically expire and are revoked at a
+<strong>precise timestamp</strong> using AWS Step Functions
+orchestration.</p>
+<p><strong>Key Architectural Innovation:</strong> This system uses
+<strong>AWS Step Functions</strong> for complete workflow orchestration,
+ensuring that every permission request follows a reliable, auditable,
+and time-bound execution path from request to automatic revocation.</p>
+<h2
+id="architecture-comparison-step-functions-vs-background-workers">Architecture
+Comparison: Step Functions vs. Background Workers</h2>
+<h3 id="why-step-functions-for-pvm">Why Step Functions for PVM?</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Aspect</th>
+<th>Background Worker Approach</th>
+<th>Step Functions Approach (PVM)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Expiration Guarantee</strong></td>
+<td>Polling-based (5-min intervals) - permissions can exceed expiry by
+up to 5 minutes</td>
+<td>Timestamp-based Wait state - revocation occurs
+<strong>exactly</strong> at expiration time</td>
+</tr>
+<tr class="even">
+<td><strong>Workflow State Management</strong></td>
+<td>Manual state tracking in DynamoDB, complex error handling</td>
+<td>Built-in state machine with automatic transitions and error
+handling</td>
+</tr>
+<tr class="odd">
+<td><strong>Approval Wait Handling</strong></td>
+<td>Database polling or webhook with custom queueing</td>
+<td>Activity Task with automatic token management</td>
+</tr>
+<tr class="even">
+<td><strong>Reliability</strong></td>
+<td>Dependent on EventBridge schedule + Lambda success</td>
+<td>Built-in retry logic, error handling, and execution durability</td>
+</tr>
+<tr class="odd">
+<td><strong>Visibility</strong></td>
+<td>Custom logging and piecing together request lifecycle</td>
+<td>Complete execution history with visual workflow in Step Functions
+console</td>
+</tr>
+<tr class="even">
+<td><strong>Scalability</strong></td>
+<td>Need to manage concurrent Lambda invocations, DynamoDB
+throughput</td>
+<td>Automatic scaling, up to 1 million open executions</td>
+</tr>
+<tr class="odd">
+<td><strong>Cost at Low Volume</strong></td>
+<td>Multiple Lambda invocations + DynamoDB reads (polling overhead)</td>
+<td>Pay only for state transitions (more economical at low-medium
+volume)</td>
+</tr>
+<tr class="even">
+<td><strong>Complexity</strong></td>
+<td>Custom orchestration logic, retry handling, timeout management</td>
+<td>Declarative state machine definition, less custom code</td>
+</tr>
+<tr class="odd">
+<td><strong>Maximum Duration</strong></td>
+<td>Unlimited (but requires custom expiration management)</td>
+<td><strong>1 year maximum</strong> (Step Functions limit)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="when-to-use-each-approach">When to Use Each Approach</h3>
+<p><strong>Use Step Functions (like PVM) when:</strong></p>
+<ul>
+<li>Precise timing is critical (expiration must be exact)</li>
+<li>Workflow has clear, sequential states with waits</li>
+<li>Audit trail and execution history are important</li>
+<li>You want to minimize custom orchestration code</li>
+<li>Permission durations are under 1 year</li>
+</ul>
+<p><strong>Use Background Workers when:</strong></p>
+<ul>
+<li>Permission durations can exceed 1 year</li>
+<li>Polling-based checks are acceptable</li>
+<li>You need more flexibility in orchestration logic</li>
+<li>You already have a robust worker infrastructure</li>
+<li>Cost optimization at very high scale is critical</li>
+</ul>
+<h3 id="pvms-design-choice">PVM's Design Choice</h3>
+<p>PVM uses Step Functions because:</p>
+<ol type="1">
+<li><strong>Expiration is a compliance requirement</strong> -
+Permissions must be revoked exactly at expiration time, not "within 5
+minutes"</li>
+<li><strong>Simple workflow</strong> - The approval → grant → wait →
+revoke pattern fits perfectly in a state machine</li>
+<li><strong>Reduced complexity</strong> - No need for custom scheduler,
+queue management, or state coordination</li>
+<li><strong>Better auditability</strong> - Complete execution trace in
+Step Functions console</li>
+<li><strong>Reliability</strong> - Built-in retry, error handling, and
+dead-letter queues</li>
+</ol>
+<p><strong>Trade-off Acknowledged:</strong> Maximum permission duration
+is <strong>1 year</strong> (Step Functions execution limit). This is
+acceptable for PVM's use case (typical durations: minutes to hours, max:
+days). For longer-lived permissions, a hybrid approach or background
+worker model would be more appropriate.</p>
+<h2 id="system-flow-step-functions-orchestration">System Flow (Step
+Functions Orchestration)</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                   PERMISSIONS REQUEST FLOW (Step Functions)                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  ┌──────────┐
+  │ Requester│ (AI Agent, Service, Developer)
+  │  System  │
+  └────┬─────┘
+       │
+       │ 1. POST /api/permissions/request
+       │    {permissions: [...], callbackUrl, requester, expirationMinutes, ...}
+       │
+       ▼
+  ┌────────────────┐
+  │   API Gateway  │
+  │   + Lambda     │
+  └────┬───────────┘
+       │
+       │ 2. Validate request
+       │    Start Step Functions execution
+       │    execution_arn becomes request_id
+       │
+       ▼
+  ┌────────────────────────────────────────────────────────────────────┐
+  │                      STEP FUNCTIONS STATE MACHINE                  │
+  │                                                                     │
+  │   [Start]                                                           │
+  │      │                                                              │
+  │      ▼                                                              │
+  │   [StoreRequest]  ──────────► Store initial request in DynamoDB    │
+  │      │                         Status: PENDING                      │
+  │      │                         Store execution ARN as request_id   │
+  │      ▼                                                              │
+  │   [WaitForApproval]  ───────► ** .waitForTaskToken **               │
+  │      │                         Invoke SendApprovalEmail Lambda     │
+  │      │                         Pass task token as input            │
+  │      │                         Lambda sends email with token       │
+  │      │                         Waits for SendTaskSuccess/Failure    │
+  │      │                                                              │
+  │      │ ◄────────────────────── Approver clicks [Approve] or [Deny] │
+  │      │                         API Gateway endpoint receives click │
+  │      │                         Calls SendTaskSuccess/Failure with  │
+  │      │                         task token from JWT                 │
+  │      │                                                              │
+  │      ▼                                                              │
+  │   [CheckApproval]  ─────────► Choice state based on approval result│
+  │      │                                                              │
+  │      ├─── Denied ──────────────────────────────────────┐          │
+  │      │                                                   │          │
+  │      ▼ Approved                                         ▼          │
+  │   [GrantPermissions]  ──────► Execute IAM changes      [SendDenialCallback] │
+  │      │                         Attach policies                     │
+  │      │                         Log to audit trail                  │
+  │      │                         Update DynamoDB: COMPLETED          │
+  │      ▼                                                              │
+  │   [SendApprovalCallback]  ──► POST to callback URL                 │
+  │      │                         Retry with backoff (3x)             │
+  │      │                         Log delivery status                 │
+  │      ▼                                                              │
+  │   [WaitForExpiration]  ─────► ** WAIT STATE **                     │
+  │      │                         TimestampPath: $.permission_expires_at│
+  │      │                         Waits until exact expiration time   │
+  │      │                         (No polling! Precise timestamp wait)│
+  │      │                                                              │
+  │      │ ... time passes ...                                         │
+  │      │                                                              │
+  │      ▼                                                              │
+  │   [RevokePermissions]  ─────► Detach/delete IAM policies           │
+  │      │                         Update DynamoDB: REVOKED             │
+  │      │                         Log revocation to audit trail       │
+  │      ▼                                                              │
+  │   [SendRevocationCallback]  ► POST revocation notice (if enabled)  │
+  │      │                         Retry with backoff (3x)             │
+  │      ▼                                                              │
+  │   [End]  ───────────────────► Execution complete                   │
+  │                                                                     │
+  │   [Error Handlers] ──────────► Catch states for failures           │
+  │      • Email send failure     Update status, send callback         │
+  │      • IAM execution failure  Mark FAILED, notify requester        │
+  │      • Callback timeout       Log and continue (don&#39;t block flow)  │
+  │                                                                     │
+  └─────────────────────────────────────────────────────────────────────┘
+       │
+       │ 3. Return 202 Accepted {execution_arn as request_id}
+       │
+       ▼
+  ┌──────────┐
+  │Requester │ ◄───── Immediate response
+  │ System   │        (request acknowledged, execution_arn returned)
+  └──────────┘</code></pre>
+<h2 id="step-functions-state-machine-design">Step Functions State
+Machine Design</h2>
+<h3 id="state-machine-structure">State Machine Structure</h3>
+<p>The PVM state machine has these key states:</p>
+<ol type="1">
+<li><strong>StoreRequest</strong> (Task) - Write request to
+DynamoDB</li>
+<li><strong>WaitForApproval</strong> (Task with .waitForTaskToken) -
+Invoke SendApprovalEmail Lambda with task token, wait for callback</li>
+<li><strong>CheckApproval</strong> (Choice) - Branch on
+approved/denied</li>
+<li><strong>GrantPermissions</strong> (Task) - Execute IAM changes (if
+approved)</li>
+<li><strong>SendApprovalCallback</strong> (Task) - Notify requester of
+approval result</li>
+<li><strong>WaitForExpiration</strong> (Wait) - Pause until exact
+expiration timestamp</li>
+<li><strong>RevokePermissions</strong> (Task) - Remove IAM policies</li>
+<li><strong>SendRevocationCallback</strong> (Task) - Notify requester of
+revocation (optional)</li>
+</ol>
+<h3 id="waitfortasktoken-pattern-for-approval">.waitForTaskToken Pattern
+for Approval</h3>
+<p><strong>The approval wait uses AWS Step Functions
+<code>.waitForTaskToken</code> integration:</strong></p>
+<ol type="1">
+<li><strong>State machine invokes SendApprovalEmail Lambda</strong> with
+<code>.waitForTaskToken</code> suffix</li>
+<li><strong>Step Functions passes task token</strong> via
+<code>$$.Task.Token</code> in Lambda input</li>
+<li><strong>Lambda receives task token as input parameter</strong> (no
+polling needed!)</li>
+<li><strong>Lambda generates JWT</strong> with embedded task token</li>
+<li><strong>Approval email sent</strong> with links containing JWT</li>
+<li><strong>Approver clicks link</strong> → API Gateway endpoint</li>
+<li><strong>Endpoint calls</strong> <code>SendTaskSuccess</code>
+(approve) or <code>SendTaskFailure</code> (deny) with task token</li>
+<li><strong>Step Functions resumes</strong> execution with approval
+result</li>
+</ol>
+<p><strong>Key Benefit:</strong> No polling required! Task token is
+passed directly to Lambda as input. Much simpler than Activity
+Tasks.</p>
+<p><strong>Lambda Input (receives task token):</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;taskToken&quot;</span><span class="fu">:</span> <span class="st">&quot;AAAAKgAAAAIAAA...&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;request&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;request_id&quot;</span><span class="fu">:</span> <span class="st">&quot;execution-arn&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;permissions_requested&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="er">...</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;requester&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="er">...</span><span class="fu">}</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>JWT Payload (includes task token):</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;request_id&quot;</span><span class="fu">:</span> <span class="st">&quot;execution-arn&quot;</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;action&quot;</span><span class="fu">:</span> <span class="st">&quot;approve&quot;</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;task_token&quot;</span><span class="fu">:</span> <span class="st">&quot;AAAAKgAAAAIAAA...&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iat&quot;</span><span class="fu">:</span> <span class="dv">1708646400</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;exp&quot;</span><span class="fu">:</span> <span class="dv">1708648200</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>API Endpoint Logic (approve):</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Verify JWT, extract task token</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> { task_token<span class="op">,</span> request_id } <span class="op">=</span> <span class="fu">verifyToken</span>(jwt)<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Send success to Step Functions</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> stepfunctions<span class="op">.</span><span class="fu">sendTaskSuccess</span>({</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">taskToken</span><span class="op">:</span> task_token<span class="op">,</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">output</span><span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">approved</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">approved_by</span><span class="op">:</span> approverEmail<span class="op">,</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">approved_at</span><span class="op">:</span> <span class="kw">new</span> <span class="bu">Date</span>()<span class="op">.</span><span class="fu">toISOString</span>()</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>})<span class="op">.</span><span class="fu">promise</span>()<span class="op">;</span></span></code></pre></div>
+<h3 id="wait-state-for-precise-expiration">Wait State for Precise
+Expiration</h3>
+<p><strong>The expiration wait uses a Wait state with
+TimestampPath:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Type&quot;</span><span class="fu">:</span> <span class="st">&quot;Wait&quot;</span><span class="fu">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;TimestampPath&quot;</span><span class="fu">:</span> <span class="st">&quot;$.permission_expires_at&quot;</span><span class="fu">,</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Next&quot;</span><span class="fu">:</span> <span class="st">&quot;RevokePermissions&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>How it works:</strong></p>
+<ol type="1">
+<li><strong>GrantPermissions task</strong> calculates:
+<code>permission_expires_at = approval_time + expiration_minutes</code></li>
+<li><strong>Stores in execution context:</strong>
+<code>{..., "permission_expires_at": "2026-02-22T20:00:00Z"}</code></li>
+<li><strong>WaitForExpiration state</strong> reads
+<code>$.permission_expires_at</code> from context</li>
+<li><strong>Step Functions pauses execution</strong> until that exact
+timestamp</li>
+<li><strong>At expiration time</strong>, execution automatically resumes
+to RevokePermissions</li>
+<li><strong>No polling required!</strong> Step Functions manages the
+timer internally</li>
+</ol>
+<p><strong>Precision:</strong> Sub-second accuracy. Revocation occurs
+within seconds of expiration time.</p>
+<p><strong>Maximum Duration:</strong> 1 year (Step Functions execution
+time limit). This is enforced at request validation time.</p>
+<h2 id="component-responsibilities">Component Responsibilities</h2>
+<h3 id="1-api-gateway--lambda-entry-point">1. API Gateway + Lambda
+(Entry Point)</h3>
+<p><strong>File:</strong> <code>src/api.js</code></p>
+<p><strong>Responsibilities:</strong></p>
+<ul>
+<li>Accept POST requests at <code>/api/permissions/request</code></li>
+<li>Validate incoming request schema</li>
+<li><strong>Start Step Functions execution</strong> (not just DynamoDB
+write)</li>
+<li>Return execution ARN as <code>request_id</code></li>
+<li>Accept GET requests at <code>/api/permissions/approve</code> and
+<code>/api/permissions/deny</code></li>
+<li><strong>Call SendTaskSuccess/SendTaskFailure</strong> with task
+token from JWT</li>
+</ul>
+<p><strong>Key Change from Original:</strong></p>
+<ul>
+<li>No longer directly triggers email/callback</li>
+<li>Instead, starts Step Functions execution and returns execution
+ARN</li>
+<li>Approval endpoints call Step Functions API (not DynamoDB
+updates)</li>
+</ul>
+<p><strong>API Handler (request submission):</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">async</span> <span class="kw">function</span> <span class="fu">handlePermissionRequest</span>(<span class="bu">event</span>) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> request <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(<span class="bu">event</span><span class="op">.</span><span class="at">body</span>)<span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Validate request</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">validateRequest</span>(request)<span class="op">;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Start Step Functions execution</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> execution <span class="op">=</span> <span class="cf">await</span> stepfunctions<span class="op">.</span><span class="fu">startExecution</span>({</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">stateMachineArn</span><span class="op">:</span> <span class="bu">process</span><span class="op">.</span><span class="at">env</span><span class="op">.</span><span class="at">STATE_MACHINE_ARN</span><span class="op">,</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span><span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>(request)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  })<span class="op">.</span><span class="fu">promise</span>()<span class="op">;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">statusCode</span><span class="op">:</span> <span class="dv">202</span><span class="op">,</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">body</span><span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>      <span class="dt">request_id</span><span class="op">:</span> execution<span class="op">.</span><span class="at">executionArn</span><span class="op">,</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>      <span class="dt">status</span><span class="op">:</span> <span class="st">&#39;pending&#39;</span><span class="op">,</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>      <span class="dt">created_at</span><span class="op">:</span> <span class="kw">new</span> <span class="bu">Date</span>()<span class="op">.</span><span class="fu">toISOString</span>()</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><strong>Approval Handler:</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">async</span> <span class="kw">function</span> <span class="fu">handleApprove</span>(<span class="bu">event</span>) {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> token <span class="op">=</span> <span class="bu">event</span><span class="op">.</span><span class="at">queryStringParameters</span><span class="op">.</span><span class="at">token</span><span class="op">;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Verify JWT</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> { task_token<span class="op">,</span> request_id } <span class="op">=</span> <span class="fu">verifyToken</span>(token)<span class="op">;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Send success to Step Functions</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> stepfunctions<span class="op">.</span><span class="fu">sendTaskSuccess</span>({</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">taskToken</span><span class="op">:</span> task_token<span class="op">,</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span><span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">approved</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">approved_by</span><span class="op">:</span> <span class="fu">extractApproverEmail</span>(<span class="bu">event</span>)<span class="op">,</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>      <span class="dt">approved_at</span><span class="op">:</span> <span class="kw">new</span> <span class="bu">Date</span>()<span class="op">.</span><span class="fu">toISOString</span>()</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  })<span class="op">.</span><span class="fu">promise</span>()<span class="op">;</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">statusCode</span><span class="op">:</span> <span class="dv">200</span><span class="op">,</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">headers</span><span class="op">:</span> { <span class="st">&#39;Content-Type&#39;</span><span class="op">:</span> <span class="st">&#39;text/html&#39;</span> }<span class="op">,</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">body</span><span class="op">:</span> <span class="fu">renderApprovalSuccessPage</span>(request_id)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="2-step-functions-state-machine-tasks-lambda-functions">2. Step
+Functions State Machine Tasks (Lambda Functions)</h3>
+<p>Each Task state in the state machine invokes a Lambda function:</p>
+<h4 id="storerequest-lambda-srctasksstore-requestjs">StoreRequest Lambda
+(<code>src/tasks/store-request.js</code>)</h4>
+<p><strong>Input:</strong> Initial request from API<br />
+<strong>Output:</strong> Request record with execution ARN as
+request_id<br />
+<strong>Responsibility:</strong></p>
+<ul>
+<li>Store request in DynamoDB with status <code>PENDING</code></li>
+<li>Use execution ARN as <code>request_id</code></li>
+<li>Calculate <code>permission_expires_at</code> (approval time comes
+later, this is request time + duration)</li>
+<li>Return full request object for next states</li>
+</ul>
+<h4
+id="sendapprovalemail-lambda-srctaskssend-approval-emailjs">SendApprovalEmail
+Lambda (<code>src/tasks/send-approval-email.js</code>)</h4>
+<p><strong>Input:</strong> Request object + task token (from
+<code>$$.Task.Token</code>)<br />
+<strong>Output:</strong> Email sent confirmation<br />
+<strong>Responsibility:</strong></p>
+<ul>
+<li>Receive task token as direct input parameter (no polling!)</li>
+<li>Generate JWT tokens with task token embedded</li>
+<li>Construct approval email HTML</li>
+<li>Send via AWS SES</li>
+<li>Return success (Lambda completes, but state machine waits for
+external callback)</li>
+</ul>
+<p><strong>Critical:</strong> This Lambda <strong>receives the task
+token as input</strong> from Step Functions via
+<code>.waitForTaskToken</code> pattern. No polling required!</p>
+<h4
+id="grantpermissions-lambda-srctasksgrant-permissionsjs">GrantPermissions
+Lambda (<code>src/tasks/grant-permissions.js</code>)</h4>
+<p><strong>Input:</strong> Request object + approval result<br />
+<strong>Output:</strong> IAM execution result + calculated
+<code>permission_expires_at</code><br />
+<strong>Responsibility:</strong></p>
+<ul>
+<li>Validate requested permissions against allowlist</li>
+<li>Construct IAM policy document</li>
+<li>Attach policy to target principal</li>
+<li>Calculate precise expiration timestamp:
+<code>permission_expires_at = approval.approved_at + expiration_minutes</code></li>
+<li>Store this timestamp in execution context for Wait state</li>
+<li>Update DynamoDB with status <code>COMPLETED</code> and policy
+details</li>
+<li>Log IAM actions to audit trail</li>
+</ul>
+<p><strong>Output Example:</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;policy_arn&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::123456789012:policy/pvm-request-abc123&quot;</span><span class="fu">,</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;attached_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-02-22T19:15:30Z&quot;</span><span class="fu">,</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;permission_expires_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-02-22T20:00:30Z&quot;</span><span class="fu">,</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;target_principal&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::123456789012:role/agent-role&quot;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h4
+id="revokepermissions-lambda-srctasksrevoke-permissionsjs">RevokePermissions
+Lambda (<code>src/tasks/revoke-permissions.js</code>)</h4>
+<p><strong>Input:</strong> Request object + IAM execution result<br />
+<strong>Output:</strong> Revocation confirmation<br />
+<strong>Responsibility:</strong></p>
+<ul>
+<li>Extract policy ARN and target principal</li>
+<li>Call <code>iam:DeleteRolePolicy</code> or
+<code>iam:DeleteUserPolicy</code></li>
+<li>Update DynamoDB with status <code>REVOKED</code></li>
+<li>Log revocation to audit trail</li>
+<li>Return revocation details</li>
+</ul>
+<h4 id="sendcallback-lambdas-srctaskssend-callbackjs">SendCallback
+Lambdas (<code>src/tasks/send-callback.js</code>)</h4>
+<p><strong>Input:</strong> Request object + approval/revocation
+result<br />
+<strong>Output:</strong> Callback delivery status<br />
+<strong>Responsibility:</strong></p>
+<ul>
+<li>Construct callback payload (approved/denied/revoked)</li>
+<li>POST to requester's callback URL</li>
+<li>Retry with exponential backoff (handled by Step Functions retry
+config)</li>
+<li>Update DynamoDB with callback delivery status</li>
+<li>Return success/failure</li>
+</ul>
+<p><strong>Note:</strong> Separate invocations for approval callback and
+revocation callback (both use same Lambda, different input).</p>
+<h3 id="3-task-token-delivery-no-worker-needed">3. Task Token Delivery
+(No Worker Needed!)</h3>
+<p><strong>The <code>.waitForTaskToken</code> pattern eliminates the
+need for a separate worker:</strong></p>
+<p><strong>How it works:</strong></p>
+<ol type="1">
+<li>Step Functions invokes <code>SendApprovalEmail</code> Lambda with
+<code>arn:aws:states:::lambda:invoke.waitForTaskToken</code></li>
+<li>Step Functions <strong>automatically passes task token</strong> via
+<code>$$.Task.Token</code> in the Lambda input</li>
+<li>Lambda receives token directly as a parameter</li>
+<li>Lambda embeds token in JWT and sends email</li>
+<li>Lambda returns (completes), but Step Functions <strong>keeps
+execution open</strong></li>
+<li>When approval API endpoint calls <code>SendTaskSuccess</code>, Step
+Functions resumes</li>
+</ol>
+<p><strong>Key Benefit:</strong> No polling loop! No
+<code>GetActivityTask()</code> calls! Task token is delivered directly
+to Lambda as input. This is the AWS-recommended pattern for
+callback-based workflows.</p>
+<h3 id="4-dynamodb-tables">4. DynamoDB Tables</h3>
+<p>Same schema as before, but with additional fields:</p>
+<h4 id="pvm-requests-table"><code>pvm-requests</code> Table</h4>
+<p><strong>Additional Fields:</strong></p>
+<ul>
+<li><code>execution_arn</code> (String) - Step Functions execution ARN
+(also the request_id)</li>
+<li><code>task_token</code> (String) - Activity task token (for
+debugging, not used by app logic after email sent)</li>
+</ul>
+<p><strong>Indexes:</strong></p>
+<ul>
+<li>GSI: <code>status-permission_expires_at-index</code> (NOT used for
+polling, but for monitoring/dashboards)</li>
+</ul>
+<h3 id="5-audit-logger">5. Audit Logger</h3>
+<p>Same as before, logs all events to DynamoDB
+<code>pvm-audit-logs</code> table.</p>
+<p><strong>Additional events:</strong></p>
+<ul>
+<li><code>execution_started</code></li>
+<li><code>execution_completed</code></li>
+<li><code>execution_failed</code></li>
+<li><code>task_token_generated</code></li>
+<li><code>wait_state_entered</code> (optional, for deep tracing)</li>
+</ul>
+<h2 id="data-models">Data Models</h2>
+<h3 id="request-record-dynamodb-pvm-requests">Request Record (DynamoDB:
+<code>pvm-requests</code>)</h3>
+<p><strong>Primary Key:</strong> <code>request_id</code> (String, Step
+Functions execution ARN)</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;request_id&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:states:us-east-1:123456789012:execution:pvm-state-machine:550e8400-e29b-41d4-a716-446655440000&quot;</span><span class="fu">,</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;execution_arn&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:states:us-east-1:123456789012:execution:pvm-state-machine:550e8400-e29b-41d4-a716-446655440000&quot;</span><span class="fu">,</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="st">&quot;PENDING | APPROVED | DENIED | COMPLETED | REVOKED | FAILED&quot;</span><span class="fu">,</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;created_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-02-22T19:13:00Z&quot;</span><span class="fu">,</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;updated_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-02-22T20:00:30Z&quot;</span><span class="fu">,</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;requester&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="er">...</span> <span class="fu">},</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;permissions_requested&quot;</span><span class="fu">:</span> <span class="ot">[</span> <span class="er">...</span> <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;callback_url&quot;</span><span class="fu">:</span> <span class="st">&quot;https://...&quot;</span><span class="fu">,</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;expiration&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;requested_duration_minutes&quot;</span><span class="fu">:</span> <span class="dv">45</span><span class="fu">,</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;permission_expires_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-02-22T20:00:30Z&quot;</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;approval&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;approved_by&quot;</span><span class="fu">:</span> <span class="st">&quot;admin@example.com&quot;</span><span class="fu">,</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;approved_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-02-22T19:15:00Z&quot;</span><span class="fu">,</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;action&quot;</span><span class="fu">:</span> <span class="st">&quot;approve | deny&quot;</span><span class="fu">,</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;task_token&quot;</span><span class="fu">:</span> <span class="st">&quot;AAAAKgAAAAIAAA...&quot;</span> </span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;execution&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;executed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-02-22T19:15:30Z&quot;</span><span class="fu">,</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;policy_arn&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::123456789012:policy/pvm-request-550e8400&quot;</span><span class="fu">,</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;errors&quot;</span><span class="fu">:</span> <span class="ot">[]</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;revocation&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;revoked_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-02-22T20:00:30Z&quot;</span><span class="fu">,</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;revoked_by&quot;</span><span class="fu">:</span> <span class="st">&quot;system&quot;</span><span class="fu">,</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;expiration&quot;</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;callback&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="er">...</span> <span class="fu">},</span></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ttl&quot;</span><span class="fu">:</span> <span class="dv">1740257580</span></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h2 id="step-functions-state-machine-definition">Step Functions State
+Machine Definition</h2>
+<p>See <code>docs/step-functions-state-machine.json</code> for the
+complete Amazon States Language (ASL) definition.</p>
+<p><strong>Key States:</strong></p>
+<ul>
+<li><strong>StoreRequest</strong> - Task state invoking
+<code>StoreRequestFunction</code> Lambda</li>
+<li><strong>WaitForApproval</strong> - <strong>Task state with
+<code>.waitForTaskToken</code></strong> invoking
+<code>SendApprovalEmailFunction</code> Lambda and waiting for
+callback</li>
+<li><strong>CheckApproval</strong> - Choice state branching on
+<code>$.approval.approved</code></li>
+<li><strong>GrantPermissions</strong> - Task state invoking
+<code>GrantPermissionsFunction</code> Lambda</li>
+<li><strong>SendApprovalCallback</strong> - Task state invoking
+<code>SendCallbackFunction</code> Lambda</li>
+<li><strong>WaitForExpiration</strong> - <strong>Wait state</strong>
+with <code>TimestampPath: $.permission_expires_at</code></li>
+<li><strong>RevokePermissions</strong> - Task state invoking
+<code>RevokePermissionsFunction</code> Lambda</li>
+<li><strong>SendRevocationCallback</strong> - Task state invoking
+<code>SendCallbackFunction</code> Lambda (optional)</li>
+</ul>
+<p><strong>Error Handling:</strong></p>
+<p>Each Task state has:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Retry&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;ErrorEquals&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;Lambda.ServiceException&quot;</span><span class="ot">,</span> <span class="st">&quot;Lambda.TooManyRequestsException&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;IntervalSeconds&quot;</span><span class="fu">:</span> <span class="dv">2</span><span class="fu">,</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;MaxAttempts&quot;</span><span class="fu">:</span> <span class="dv">3</span><span class="fu">,</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;BackoffRate&quot;</span><span class="fu">:</span> <span class="fl">2.0</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Catch&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;ErrorEquals&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;States.ALL&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Next&quot;</span><span class="fu">:</span> <span class="st">&quot;HandleFailure&quot;</span><span class="fu">,</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;ResultPath&quot;</span><span class="fu">:</span> <span class="st">&quot;$.error&quot;</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h2 id="security-model">Security Model</h2>
+<h3 id="1-jwt-signing-with-task-token">1. JWT Signing (with Task
+Token)</h3>
+<p><strong>JWT Payload:</strong></p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;request_id&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:states:...&quot;</span><span class="fu">,</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;action&quot;</span><span class="fu">:</span> <span class="st">&quot;approve&quot;</span><span class="fu">,</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;task_token&quot;</span><span class="fu">:</span> <span class="st">&quot;AAAAKgAAAAIAAA...&quot;</span><span class="fu">,</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iat&quot;</span><span class="fu">:</span> <span class="dv">1708646400</span><span class="fu">,</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;exp&quot;</span><span class="fu">:</span> <span class="dv">1708648200</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Approval Flow:</strong></p>
+<ol type="1">
+<li>Verify JWT signature and expiration</li>
+<li>Extract <code>task_token</code></li>
+<li>Call
+<code>stepfunctions.sendTaskSuccess({ taskToken: task_token, output: {...} })</code></li>
+</ol>
+<p><strong>Security:</strong></p>
+<ul>
+<li>Task token is opaque, single-use (Step Functions enforces)</li>
+<li>JWT signature prevents tampering</li>
+<li>JWT expiration (60 min) limits exposure window</li>
+<li>Task token cannot be reused after SendTaskSuccess/Failure</li>
+</ul>
+<h3 id="2-iam-permissions-system-role">2. IAM Permissions (System
+Role)</h3>
+<p><strong>Step Functions Execution Role:</strong></p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Version&quot;</span><span class="fu">:</span> <span class="st">&quot;2012-10-17&quot;</span><span class="fu">,</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Statement&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;lambda:InvokeFunction&quot;</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;arn:aws:lambda:*:*:function:pvm-*&quot;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;states:SendTaskSuccess&quot;</span><span class="ot">,</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;states:SendTaskFailure&quot;</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;*&quot;</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Lambda Execution Roles</strong> (approval API endpoint
+needs):</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;states:SendTaskSuccess&quot;</span><span class="ot">,</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;states:SendTaskFailure&quot;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;*&quot;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Note:</strong> <code>GetActivityTask</code> is NOT needed!
+The <code>.waitForTaskToken</code> pattern passes the token directly to
+the Lambda.</p>
+<h3 id="3-task-token-security">3. Task Token Security</h3>
+<ul>
+<li>Task tokens are single-use (Step Functions enforces)</li>
+<li>Tokens expire when execution times out (max 7 days for approval
+wait)</li>
+<li>Tokens cannot be guessed (cryptographically random, 1024+ bits)</li>
+<li>SendTaskSuccess requires valid token (Step Functions validates)</li>
+<li>Token is passed securely from Step Functions → Lambda → JWT → API
+endpoint</li>
+</ul>
+<h3 id="4-iam-permissions-for-grantpermissions-lambda">4. IAM
+Permissions for GrantPermissions Lambda</h3>
+<p>The <code>GrantPermissions</code> Lambda requires precise IAM
+permissions to grant temporary policies while preventing privilege
+escalation:</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Version&quot;</span><span class="fu">:</span> <span class="st">&quot;2012-10-17&quot;</span><span class="fu">,</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Statement&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;AllowPolicyManagement&quot;</span><span class="fu">,</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:CreatePolicy&quot;</span><span class="ot">,</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:CreatePolicyVersion&quot;</span><span class="ot">,</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:GetPolicy&quot;</span><span class="ot">,</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:GetPolicyVersion&quot;</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::*:policy/pvm-request-*&quot;</span><span class="fu">,</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Condition&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;StringEquals&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;aws:RequestedRegion&quot;</span><span class="fu">:</span> <span class="st">&quot;${AWS::Region}&quot;</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;AllowRolePolicyAttachment&quot;</span><span class="fu">,</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:PutRolePolicy&quot;</span><span class="ot">,</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:AttachRolePolicy&quot;</span><span class="ot">,</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:GetRole&quot;</span><span class="ot">,</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:GetRolePolicy&quot;</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::*:role/agent-*&quot;</span><span class="fu">,</span></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Condition&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;StringLike&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;iam:PolicyArn&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::*:policy/pvm-request-*&quot;</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;DenyAllOtherIAMActions&quot;</span><span class="fu">,</span></span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Deny&quot;</span><span class="fu">,</span></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="st">&quot;iam:*&quot;</span><span class="fu">,</span></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;NotResource&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;arn:aws:iam::*:role/agent-*&quot;</span><span class="ot">,</span></span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;arn:aws:iam::*:policy/pvm-request-*&quot;</span></span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span></span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Security Constraints:</strong></p>
+<ul>
+<li><strong>Policy Naming:</strong> Only policies prefixed with
+<code>pvm-request-*</code> can be created</li>
+<li><strong>Role Targeting:</strong> Only roles prefixed with
+<code>agent-*</code> can be modified</li>
+<li><strong>Deny-by-Default:</strong> Explicit deny on all other IAM
+resources</li>
+<li><strong>No User Policies:</strong> Cannot attach policies to IAM
+users (only roles)</li>
+<li><strong>No Admin Actions:</strong> Cannot create users, groups, or
+modify unrelated roles</li>
+</ul>
+<p><strong>Rationale:</strong></p>
+<ul>
+<li>Prevents PVM from granting permissions outside its scope</li>
+<li>Ensures only temporary, tracked policies are created</li>
+<li>Protects against privilege escalation attacks</li>
+<li>Enables audit trail (all policies follow naming convention)</li>
+</ul>
+<h3 id="5-iam-permissions-for-revokepermissions-lambda">5. IAM
+Permissions for RevokePermissions Lambda</h3>
+<p>The <code>RevokePermissions</code> Lambda requires mirror permissions
+to clean up policies:</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Version&quot;</span><span class="fu">:</span> <span class="st">&quot;2012-10-17&quot;</span><span class="fu">,</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Statement&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;AllowPolicyDeletion&quot;</span><span class="fu">,</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:DeletePolicy&quot;</span><span class="ot">,</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:DeletePolicyVersion&quot;</span><span class="ot">,</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:GetPolicy&quot;</span><span class="ot">,</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:ListPolicyVersions&quot;</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::*:policy/pvm-request-*&quot;</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;AllowRolePolicyDetachment&quot;</span><span class="fu">,</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:DeleteRolePolicy&quot;</span><span class="ot">,</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:DetachRolePolicy&quot;</span><span class="ot">,</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:GetRole&quot;</span><span class="ot">,</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;iam:GetRolePolicy&quot;</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::*:role/agent-*&quot;</span><span class="fu">,</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Condition&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;StringLike&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;iam:PolicyArn&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:iam::*:policy/pvm-request-*&quot;</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;DenyAllOtherIAMActions&quot;</span><span class="fu">,</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Deny&quot;</span><span class="fu">,</span></span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="st">&quot;iam:*&quot;</span><span class="fu">,</span></span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;NotResource&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;arn:aws:iam::*:role/agent-*&quot;</span><span class="ot">,</span></span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;arn:aws:iam::*:policy/pvm-request-*&quot;</span></span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span></span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Security Constraints:</strong></p>
+<ul>
+<li><strong>Policy Cleanup:</strong> Only <code>pvm-request-*</code>
+policies can be deleted</li>
+<li><strong>Role Protection:</strong> Only <code>agent-*</code> roles
+can have policies detached</li>
+<li><strong>Deny-by-Default:</strong> Explicit deny on all other IAM
+operations</li>
+<li><strong>Idempotent:</strong> Handles "NoSuchEntity" errors
+gracefully (policy already deleted)</li>
+</ul>
+<p><strong>Error Handling:</strong></p>
+<ul>
+<li><code>NoSuchEntityException</code>: Ignored (policy already deleted,
+not an error)</li>
+<li>IAM throttling: Retry with exponential backoff (3 attempts)</li>
+<li>Other errors: Fail execution, trigger alarm for manual
+intervention</li>
+</ul>
+<h3 id="6-permission-allowlist-enforcement">6. Permission Allowlist
+Enforcement</h3>
+<p>The system enforces a permission allowlist at multiple layers:</p>
+<p><strong>1. API Validation (Pre-Execution):</strong></p>
+<ul>
+<li>Reject requests with forbidden actions before starting
+execution</li>
+<li>Return 400 Bad Request with specific denial reason</li>
+<li>Prevents invalid requests from entering workflow</li>
+</ul>
+<p><strong>2. GrantPermissions Task (Runtime):</strong></p>
+<ul>
+<li>Re-validate permissions against allowlist</li>
+<li>Reject wildcard actions (<code>*:*</code>, <code>iam:*</code>)</li>
+<li>Reject dangerous actions (<code>iam:CreateUser</code>,
+<code>iam:AttachUserPolicy</code>, etc.)</li>
+<li>Allow read-only actions (<code>Get*</code>, <code>List*</code>,
+<code>Describe*</code>)</li>
+<li>Allow specific write actions (configurable allowlist)</li>
+</ul>
+<p><strong>3. IAM Policy Constraints (Infrastructure):</strong></p>
+<ul>
+<li>Lambda execution role cannot grant permissions outside
+<code>agent-*</code> roles</li>
+<li>Enforced by IAM policy conditions on Lambda role itself</li>
+<li>Defense-in-depth: Even if allowlist is bypassed, IAM prevents
+escalation</li>
+</ul>
+<h3 id="7-vpc-access-control">7. VPC Access Control</h3>
+<p>The PVM API uses <strong>Regional API Gateway with resource
+policy</strong> to restrict the permission request endpoint to approved
+VPCs while keeping approval endpoints publicly accessible.</p>
+<p><strong>Security Model:</strong></p>
+<ul>
+<li><strong>Request endpoint
+(<code>POST /permissions/request</code>):</strong> VPC-only access</li>
+<li><strong>Approval endpoints (<code>GET /permissions/approve</code>,
+<code>GET /permissions/deny</code>):</strong> Public access (required
+for email workflow)</li>
+<li><strong>Rationale:</strong> Requester systems run in trusted VPCs;
+approvers click email links from anywhere (office, home, mobile)</li>
+</ul>
+<h4 id="api-gateway-configuration">API Gateway Configuration</h4>
+<p><strong>Endpoint Type:</strong> Regional (not Private, not
+Edge-Optimized)</p>
+<p><strong>Why Regional?</strong></p>
+<ul>
+<li>Resource policies can enforce VPC restrictions</li>
+<li>Still publicly routable for approval endpoints</li>
+<li>Lower latency for in-region requests</li>
+<li>Simpler DNS configuration than Edge-Optimized</li>
+</ul>
+<p><strong>Why Not Private API?</strong></p>
+<ul>
+<li>Private APIs require VPC endpoint for ALL requests</li>
+<li>Approval links wouldn't work from public internet</li>
+<li>Approvers would need VPN access (defeats purpose of email
+workflow)</li>
+</ul>
+<h4 id="resource-policy">Resource Policy</h4>
+<p>The API Gateway resource policy implements selective VPC
+restriction:</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Version&quot;</span><span class="fu">:</span> <span class="st">&quot;2012-10-17&quot;</span><span class="fu">,</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Statement&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;AllowRequestsFromApprovedVPCs&quot;</span><span class="fu">,</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Principal&quot;</span><span class="fu">:</span> <span class="st">&quot;*&quot;</span><span class="fu">,</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="st">&quot;execute-api:Invoke&quot;</span><span class="fu">,</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:execute-api:*:*:*/*/POST/permissions/request&quot;</span><span class="fu">,</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Condition&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;StringEquals&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;aws:SourceVpc&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;vpc-12345678&quot;</span><span class="ot">,</span> <span class="st">&quot;vpc-87654321&quot;</span><span class="ot">]</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;AllowPublicApprovalEndpoints&quot;</span><span class="fu">,</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Allow&quot;</span><span class="fu">,</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Principal&quot;</span><span class="fu">:</span> <span class="st">&quot;*&quot;</span><span class="fu">,</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="st">&quot;execute-api:Invoke&quot;</span><span class="fu">,</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;arn:aws:execute-api:*:*:*/*/GET/permissions/approve&quot;</span><span class="ot">,</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;arn:aws:execute-api:*:*:*/*/GET/permissions/deny&quot;</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Sid&quot;</span><span class="fu">:</span> <span class="st">&quot;DenyAllOtherAccess&quot;</span><span class="fu">,</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Effect&quot;</span><span class="fu">:</span> <span class="st">&quot;Deny&quot;</span><span class="fu">,</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Principal&quot;</span><span class="fu">:</span> <span class="st">&quot;*&quot;</span><span class="fu">,</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Action&quot;</span><span class="fu">:</span> <span class="st">&quot;execute-api:Invoke&quot;</span><span class="fu">,</span></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:execute-api:*:*:*/*/*&quot;</span><span class="fu">,</span></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Condition&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;StringNotEquals&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;aws:SourceVpc&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;vpc-12345678&quot;</span><span class="ot">,</span> <span class="st">&quot;vpc-87654321&quot;</span><span class="ot">]</span></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>        <span class="fu">},</span></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;StringNotLike&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;aws:ResourcePath&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;/permissions/approve&quot;</span><span class="ot">,</span> <span class="st">&quot;/permissions/deny&quot;</span><span class="ot">]</span></span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Policy Explanation:</strong></p>
+<ol type="1">
+<li><p><strong>Statement 1 (AllowRequestsFromApprovedVPCs):</strong></p>
+<ul>
+<li>Allows <code>POST /permissions/request</code> ONLY from specified
+VPCs</li>
+<li>Uses <code>aws:SourceVpc</code> condition to verify request
+origin</li>
+<li>VPC IDs are configurable (see Environment Variables below)</li>
+</ul></li>
+<li><p><strong>Statement 2 (AllowPublicApprovalEndpoints):</strong></p>
+<ul>
+<li>Explicitly allows public access to approval/denial endpoints</li>
+<li>No VPC restriction</li>
+<li>Required for approvers to click email links from any location</li>
+</ul></li>
+<li><p><strong>Statement 3 (DenyAllOtherAccess):</strong></p>
+<ul>
+<li>Denies all other API paths unless from approved VPCs OR approval
+paths</li>
+<li>Defense-in-depth: Blocks any undocumented endpoints</li>
+<li>Ensures only intended endpoints are accessible</li>
+</ul></li>
+</ol>
+<p><strong>Important Notes:</strong></p>
+<ul>
+<li>The Deny statement includes <code>StringNotLike</code> exception for
+approval paths, preventing it from blocking legitimate approval
+requests</li>
+<li>VPC condition only works if requests come through VPC endpoint</li>
+<li>Requests from EC2 instances with public IPs will NOT have
+<code>aws:SourceVpc</code> set (must use VPC endpoint)</li>
+</ul>
+<h4 id="vpc-endpoint-configuration">VPC Endpoint Configuration</h4>
+<p>For the resource policy to work, requester systems must access the
+API through a <strong>VPC endpoint</strong>:</p>
+<p><strong>Required VPC Endpoint Type:</strong>
+<code>com.amazonaws.&lt;region&gt;.execute-api</code></p>
+<p><strong>Steps:</strong></p>
+<ol type="1">
+<li>Create VPC endpoint in requester VPC</li>
+<li>Associate with subnets where requester systems run</li>
+<li>Configure security groups to allow HTTPS (port 443) outbound</li>
+<li>Requester systems must use VPC endpoint DNS name OR Regional API
+Gateway endpoint (AWS auto-routes through VPC endpoint)</li>
+</ol>
+<p><strong>Example VPC Endpoint Creation:</strong></p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">aws</span> ec2 create-vpc-endpoint <span class="dt">\</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--vpc-id</span> vpc-12345678 <span class="dt">\</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--service-name</span> com.amazonaws.us-east-1.execute-api <span class="dt">\</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--route-table-ids</span> rtb-12345678 <span class="dt">\</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--subnet-ids</span> subnet-12345678 subnet-87654321 <span class="dt">\</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--security-group-ids</span> sg-12345678</span></code></pre></div>
+<h4 id="multiple-vpc-support">Multiple VPC Support</h4>
+<p>The system supports multiple VPCs via environment variable
+configuration:</p>
+<p><strong>Environment Variable:</strong> <code>ALLOWED_VPC_IDS</code>
+(comma-separated list)</p>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="va">ALLOWED_VPC_IDS</span><span class="op">=</span>vpc-12345678,vpc-87654321,vpc-abcdef12</span></code></pre></div>
+<p><strong>Deployment Process:</strong></p>
+<ol type="1">
+<li>Set <code>ALLOWED_VPC_IDS</code> in CloudFormation/Terraform/SAM
+template</li>
+<li>Template renders resource policy with VPC IDs</li>
+<li>API Gateway applies resource policy on deployment</li>
+<li>Update policy by redeploying with new VPC IDs</li>
+</ol>
+<h4 id="error-response-for-vpc-restriction">Error Response for VPC
+Restriction</h4>
+<p>When a request is made to <code>POST /permissions/request</code> from
+outside approved VPCs:</p>
+<p><strong>HTTP Status:</strong> 403 Forbidden</p>
+<p><strong>Response Body:</strong></p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;message&quot;</span><span class="fu">:</span> <span class="st">&quot;User: anonymous is not authorized to perform: execute-api:Invoke on resource: arn:aws:execute-api:us-east-1:123456789012:abc123xyz/prod/POST/permissions/request with an explicit deny&quot;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Note:</strong> This is the default AWS API Gateway resource
+policy denial message. Custom error messages are not supported for
+resource policy denials.</p>
+<h4 id="testing-vpc-restrictions">Testing VPC Restrictions</h4>
+<p><strong>Test 1: Request from approved VPC (should
+succeed)</strong></p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># From EC2 instance in VPC vpc-12345678</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST https://pvm.example.com/api/permissions/request <span class="dt">\</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Content-Type: application/json&quot;</span> <span class="dt">\</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{&quot;requester&quot;: {...}, &quot;permissions&quot;: [...]}&#39;</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: 202 Accepted</span></span></code></pre></div>
+<p><strong>Test 2: Request from outside approved VPC (should
+fail)</strong></p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># From laptop, public internet, or unapproved VPC</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST https://pvm.example.com/api/permissions/request <span class="dt">\</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Content-Type: application/json&quot;</span> <span class="dt">\</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{&quot;requester&quot;: {...}, &quot;permissions&quot;: [...]}&#39;</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: 403 Forbidden (resource policy denial)</span></span></code></pre></div>
+<p><strong>Test 3: Approval link from public internet (should
+succeed)</strong></p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># From browser, public internet (clicking email link)</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> https://pvm.example.com/api/permissions/approve<span class="pp">?</span>token=eyJhbG...</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: 200 OK (HTML success page)</span></span></code></pre></div>
+<h4 id="security-benefits">Security Benefits</h4>
+<ol type="1">
+<li><p><strong>Attack Surface Reduction:</strong></p>
+<ul>
+<li>Only trusted VPCs can submit permission requests</li>
+<li>Prevents external attackers from flooding the system</li>
+<li>Reduces risk of abuse (unauthorized permission requests)</li>
+</ul></li>
+<li><p><strong>Defense-in-Depth:</strong></p>
+<ul>
+<li>Even if JWT secret is compromised, attacker can't submit requests
+from outside VPCs</li>
+<li>Complements authentication and authorization layers</li>
+</ul></li>
+<li><p><strong>Compliance:</strong></p>
+<ul>
+<li>Ensures permission requests originate from known infrastructure</li>
+<li>Supports audit requirements (all requests come from tagged
+VPCs)</li>
+</ul></li>
+<li><p><strong>Network Segmentation:</strong></p>
+<ul>
+<li>Requester systems isolated in VPCs</li>
+<li>Approval workflow remains accessible (email links work from
+anywhere)</li>
+</ul></li>
+</ol>
+<h4 id="operational-considerations">Operational Considerations</h4>
+<p><strong>Adding New VPCs:</strong></p>
+<ol type="1">
+<li>Update <code>ALLOWED_VPC_IDS</code> environment variable</li>
+<li>Redeploy API Gateway with updated resource policy</li>
+<li>Create VPC endpoint in new VPC</li>
+<li>Test connectivity from new VPC</li>
+</ol>
+<p><strong>Removing VPCs:</strong></p>
+<ol type="1">
+<li>Ensure no active requests from VPC to be removed</li>
+<li>Update <code>ALLOWED_VPC_IDS</code> (remove VPC ID)</li>
+<li>Redeploy API Gateway</li>
+<li>Delete VPC endpoint (optional)</li>
+</ol>
+<p><strong>Monitoring:</strong></p>
+<ul>
+<li>CloudWatch Logs show <code>aws:SourceVpc</code> in request
+metadata</li>
+<li>Track 403 errors for unauthorized VPC access attempts</li>
+<li>Alert on unexpected VPC IDs in logs</li>
+</ul>
+<p><strong>Limitations:</strong></p>
+<ul>
+<li>Resource policy applies to ALL stages (dev, prod) unless using
+separate APIs</li>
+<li>VPC endpoint adds minor latency (~10-50ms)</li>
+<li>VPC endpoint costs ~<span
+class="math inline">0.01/<em>h</em><em>o</em><em>u</em><em>r</em>( </span>7/month
+per endpoint)</li>
+</ul>
+<h4 id="why-this-approach-over-alternatives">Why This Approach Over
+Alternatives</h4>
+<p><strong>Option 1: Private API Gateway</strong></p>
+<ul>
+<li>❌ Approval links wouldn't work from public internet</li>
+<li>❌ Requires VPN for approvers (defeats email workflow purpose)</li>
+</ul>
+<p><strong>Option 2: Lambda Authorizer with IP Allowlist</strong></p>
+<ul>
+<li>❌ IP addresses change (EC2 instances, Auto Scaling)</li>
+<li>❌ Complex management (track hundreds of IPs)</li>
+<li>❌ No VPC-level enforcement</li>
+</ul>
+<p><strong>Option 3: Regional API + Resource Policy (PVM Choice)
+✅</strong></p>
+<ul>
+<li>✅ Request endpoint VPC-restricted</li>
+<li>✅ Approval endpoints remain public</li>
+<li>✅ VPC-level enforcement (infrastructure-based)</li>
+<li>✅ Easy management (VPC IDs are stable)</li>
+<li>✅ Supports multiple VPCs</li>
+</ul>
+<h2 id="monitoring-and-observability">Monitoring and Observability</h2>
+<h3 id="step-functions-metrics-cloudwatch">Step Functions Metrics
+(CloudWatch)</h3>
+<p><strong>Built-in Metrics:</strong></p>
+<ul>
+<li><code>ExecutionTime</code> - Duration of each execution</li>
+<li><code>ExecutionsStarted</code> - Number of new requests</li>
+<li><code>ExecutionsSucceeded</code> - Completed workflows</li>
+<li><code>ExecutionsFailed</code> - Failed workflows</li>
+<li><code>ExecutionsTimedOut</code> - Executions exceeding 1 year
+limit</li>
+</ul>
+<p><strong>Custom Metrics:</strong></p>
+<ul>
+<li>Permissions granted per hour</li>
+<li>Permissions revoked per hour</li>
+<li>Average approval time (time in WaitForApproval state)</li>
+<li>Callback delivery success rate</li>
+</ul>
+<h3 id="alarms">Alarms</h3>
+<ul>
+<li>Execution failure rate &gt; 5%</li>
+<li>Average approval time &gt; 24 hours (requests stuck)</li>
+<li>Activity task timeout rate &gt; 10%</li>
+<li>IAM execution error rate &gt; 1%</li>
+</ul>
+<h3 id="step-functions-console">Step Functions Console</h3>
+<p><strong>Visual Execution Tracking:</strong></p>
+<ul>
+<li>See current state of each request</li>
+<li>View execution history (all state transitions)</li>
+<li>Inspect input/output of each state</li>
+<li>Debug failed executions with error details</li>
+<li>Search executions by status, time range</li>
+</ul>
+<h3 id="logging">Logging</h3>
+<ul>
+<li>All Lambda functions log to CloudWatch Logs</li>
+<li>Step Functions execution events logged automatically</li>
+<li>DynamoDB audit log for compliance</li>
+<li>Structured JSON logs for easy querying</li>
+</ul>
+<h2 id="deployment-architecture">Deployment Architecture</h2>
+<h3 id="aws-services-used">AWS Services Used</h3>
+<ol type="1">
+<li><strong>API Gateway</strong> - REST API for request submission and
+approval endpoints</li>
+<li><strong>Step Functions</strong> - State machine orchestration</li>
+<li><strong>Lambda</strong> - Task execution (6-8 functions)</li>
+<li><strong>DynamoDB</strong> - Request and audit storage</li>
+<li><strong>SES</strong> - Email delivery</li>
+<li><strong>Secrets Manager</strong> - JWT secret storage</li>
+<li><strong>CloudWatch</strong> - Logs, metrics, alarms</li>
+<li><strong>S3</strong> - Optional long-term audit archive</li>
+</ol>
+<h3 id="lambda-functions">Lambda Functions</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Trigger</th>
+<th>Timeout</th>
+<th>Memory</th>
+<th>Concurrent Executions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>pvm-api-handler</code></td>
+<td>API Gateway</td>
+<td>29s</td>
+<td>512 MB</td>
+<td>High (API endpoint)</td>
+</tr>
+<tr class="even">
+<td><code>pvm-approval-handler</code></td>
+<td>API Gateway</td>
+<td>10s</td>
+<td>256 MB</td>
+<td>Medium (approval clicks)</td>
+</tr>
+<tr class="odd">
+<td><code>pvm-store-request</code></td>
+<td>Step Functions</td>
+<td>30s</td>
+<td>256 MB</td>
+<td>Matches execution starts</td>
+</tr>
+<tr class="even">
+<td><code>pvm-send-approval-email</code></td>
+<td>Step Functions</td>
+<td>60s</td>
+<td>256 MB</td>
+<td>Matches execution starts</td>
+</tr>
+<tr class="odd">
+<td><code>pvm-grant-permissions</code></td>
+<td>Step Functions</td>
+<td>60s</td>
+<td>512 MB</td>
+<td>Matches approvals</td>
+</tr>
+<tr class="even">
+<td><code>pvm-revoke-permissions</code></td>
+<td>Step Functions</td>
+<td>30s</td>
+<td>512 MB</td>
+<td>Matches expirations</td>
+</tr>
+<tr class="odd">
+<td><code>pvm-send-callback</code></td>
+<td>Step Functions</td>
+<td>15s</td>
+<td>256 MB</td>
+<td>Multiple per execution</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note:</strong> No <code>expiration-checker</code> Lambda
+needed! Step Functions Wait state handles timing.</p>
+<h3 id="environment-variables">Environment Variables</h3>
+<p>Same as before, plus:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>STATE_MACHINE_ARN</code></td>
+<td>ARN of PVM state machine</td>
+<td><code>arn:aws:states:us-east-1:...:stateMachine:pvm</code></td>
+</tr>
+<tr class="even">
+<td><code>ALLOWED_VPC_IDS</code></td>
+<td>Comma-separated list of VPC IDs allowed to call request
+endpoint</td>
+<td><code>vpc-12345678,vpc-87654321,vpc-abcdef12</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="cost-comparison">Cost Comparison</h3>
+<p><strong>Step Functions Pricing (us-east-1):</strong></p>
+<ul>
+<li>State transitions: $0.025 per 1,000 transitions</li>
+<li>Average execution: ~15 state transitions</li>
+<li>Cost per request: ~$0.000375</li>
+</ul>
+<p><strong>Example Monthly Cost (1,000 requests):</strong></p>
+<ul>
+<li>Step Functions: $0.38</li>
+<li>Lambda: ~$5 (estimate)</li>
+<li>DynamoDB: ~$1 (on-demand)</li>
+<li>SES: $0.10 (1,000 emails)</li>
+<li><strong>Total: ~$6.50/month</strong></li>
+</ul>
+<p><strong>Comparison to Background Worker:</strong></p>
+<ul>
+<li>EventBridge: <span
+class="math inline">1/<em>m</em><em>i</em><em>l</em><em>l</em><em>i</em><em>o</em><em>n</em><em>e</em><em>v</em><em>e</em><em>n</em><em>t</em><em>s</em>= </span>0.09/month
+(5-min polling)</li>
+<li>Expiration checker Lambda: ~$2/month (8,640 invocations)</li>
+<li><strong>Savings with Step Functions: ~$2/month at low volume, plus
+better reliability</strong></li>
+</ul>
+<p>At higher volumes (&gt;10,000 requests/month), costs are similar, but
+Step Functions provides better visibility and reliability.</p>
+<h2 id="limitations-and-considerations">Limitations and
+Considerations</h2>
+<h3 id="1-maximum-permission-duration-1-year">1. Maximum Permission
+Duration: 1 Year</h3>
+<p><strong>Step Functions Limitation:</strong> Maximum execution time is
+1 year (365 days).</p>
+<p><strong>Impact:</strong></p>
+<ul>
+<li><code>expiration_minutes</code> must be ≤ 525,600 (1 year)</li>
+<li>Requests exceeding this limit are rejected at API validation</li>
+<li>For longer durations, consider a hybrid approach (Step Functions for
+grant, background worker for very long expirations)</li>
+</ul>
+<p><strong>Validation:</strong></p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (request<span class="op">.</span><span class="at">expiration_minutes</span> <span class="op">&gt;</span> <span class="dv">525600</span>) {</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="st">&#39;Maximum permission duration is 1 year (525,600 minutes)&#39;</span>)<span class="op">;</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="2-approval-task-timeout">2. Approval Task Timeout</h3>
+<p><strong>If approval email is never clicked:</strong></p>
+<ul>
+<li>WaitForApproval task has a timeout (configurable, e.g., 7 days =
+604800 seconds)</li>
+<li>After timeout, execution fails with <code>States.Timeout</code></li>
+<li>Catch block sends "expired" callback to requester</li>
+<li>Request marked as <code>EXPIRED</code> in DynamoDB</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Type&quot;</span><span class="fu">:</span> <span class="st">&quot;Task&quot;</span><span class="fu">,</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Resource&quot;</span><span class="fu">:</span> <span class="st">&quot;arn:aws:states:::lambda:invoke.waitForTaskToken&quot;</span><span class="fu">,</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;TimeoutSeconds&quot;</span><span class="fu">:</span> <span class="dv">604800</span><span class="fu">,</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;Catch&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;ErrorEquals&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;States.Timeout&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Next&quot;</span><span class="fu">:</span> <span class="st">&quot;HandleApprovalTimeout&quot;</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="3-step-functions-quota">3. Step Functions Quota</h3>
+<ul>
+<li>Maximum open executions: 1 million (per region)</li>
+<li>Maximum execution history: 25,000 events per execution</li>
+<li>State transition limit: Not a concern for PVM (&lt; 20 transitions
+per execution)</li>
+</ul>
+<h3 id="4-no-polling-overhead">4. No Polling Overhead</h3>
+<p><strong>Benefit:</strong> Unlike background workers, Step Functions
+doesn't consume resources while waiting. The Wait state incurs no Lambda
+invocations or DynamoDB reads during the wait period.</p>
+<h3 id="5-idempotency">5. Idempotency</h3>
+<p><strong>Step Functions executions are idempotent by execution
+ARN:</strong></p>
+<ul>
+<li>Same <code>request_id</code> (execution ARN) cannot be started
+twice</li>
+<li>Approval endpoints check if task token is still valid</li>
+<li>SendTaskSuccess/Failure are idempotent (second call is no-op)</li>
+</ul>
+<h2 id="future-enhancements">Future Enhancements</h2>
+<p>All future enhancements from the original design apply, plus:</p>
+<ol type="1">
+<li><strong>Parallel Approvals</strong> - Use Step Functions Parallel
+state for multi-approver workflow</li>
+<li><strong>Dynamic Timeout</strong> - Adjust activity timeout based on
+permission risk level</li>
+<li><strong>Execution Replay</strong> - Restart failed executions from
+the failure point</li>
+<li><strong>Step Functions Express Workflows</strong> - For very
+high-volume, short-duration requests (&lt; 5 minutes)</li>
+<li><strong>Nested Workflows</strong> - Invoke child state machines for
+complex permission sets</li>
+</ol>
+<h2 id="migration-path-from-background-worker-architecture">Migration
+Path from Background Worker Architecture</h2>
+<p>If you previously implemented the background worker approach:</p>
+<ol type="1">
+<li><strong>Keep existing DynamoDB schema</strong> - Only add
+<code>execution_arn</code> field</li>
+<li><strong>Deploy state machine alongside existing system</strong> -
+Run both in parallel</li>
+<li><strong>Migrate incrementally</strong> - Route new requests to Step
+Functions, let old requests complete</li>
+<li><strong>Decommission EventBridge schedule</strong> - After all old
+requests expire</li>
+<li><strong>Remove expiration-checker Lambda</strong> - No longer
+needed</li>
+</ol>
+<p><strong>Zero-downtime migration</strong> is possible by using feature
+flags in the API handler.</p>
+<hr />
+<p><strong>Document Version:</strong> 2.0 (Step Functions Edition)<br />
+<strong>Last Updated:</strong> 2026-02-22<br />
+<strong>Author:</strong> OpenClaw AI (BotWard)<br />
+<strong>Architecture:</strong> AWS Step Functions Orchestration with
+Guaranteed Expiration</p>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "webmaster-v6-beta",
+  "version": "6.0.0-beta.1",
+  "description": "Static site & presentation hosting with reveal.js support, dedicated buckets, auto asset fixing, and deployment registry",
+  "main": "scripts/webmaster.js",
+  "scripts": {
+    "deploy": "node scripts/deploy.js",
+    "push": "node scripts/push.js",
+    "list": "node scripts/list.js",
+    "generate": "node scripts/generate-presentation.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudfront": "^3.0.0",
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/client-sts": "^3.1005.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "linkinator": "^7.6.1",
+    "pa11y": "^9.1.1",
+    "qrcode": "^1.5.4",
+    "qrcode": "^1.5.4"
+  }
+}

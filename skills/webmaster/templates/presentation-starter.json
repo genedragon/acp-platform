@@ -1,0 +1,237 @@
+{
+  "_comment": "Presentation Starter Template — ACP Webmaster Skill v6.1",
+  "_usage": "Copy this file, fill in your content, and pass it to generate-presentation.js",
+  "_schema_version": "1.1",
+
+  "meta": {
+    "title": "Your Presentation Title",
+    "author": "Your Name",
+    "event": "Event Name",
+    "aspect_ratio": "16:9",
+    "theme": "black",
+    "transition": "slide",
+    "transition_speed": "fast",
+    "colors": {
+      "background": "#0d1117",
+      "text_primary": "#e6edf3",
+      "text_muted": "#8b949e",
+      "accent_1": "#58a6ff",
+      "accent_2": "#3fb950",
+      "accent_3": "#bc8cff",
+      "highlight": "#ffa657",
+      "card_bg": "#161b22",
+      "card_border": "#30363d"
+    },
+    "reveal_config": {
+      "hash": true,
+      "controls": true,
+      "controlsTutorial": true,
+      "progress": true,
+      "slideNumber": "c/t",
+      "overview": true,
+      "touch": true,
+      "navigationMode": "default"
+    }
+  },
+
+  "columns": [
+
+    {
+      "id": "col-1",
+      "_comment": "TOP-LEVEL SLIDE: no sub-slides, no vertical array",
+      "slides": [
+        {
+          "id": "title",
+          "type": "title",
+          "layout": "centered",
+          "content": {
+            "headline": "Your Presentation Title",
+            "subheadline": "Your Subtitle Here",
+            "presenter": "Presenter Name",
+            "event": "Event Name · Date"
+          },
+          "speaker_notes": "Opening notes for presenter."
+        }
+      ]
+    },
+
+    {
+      "id": "col-2",
+      "_comment": "SECTION WITH DEEP DIVES: first slide is top-level, rest are vertical sub-slides",
+      "slides": [
+        {
+          "id": "2",
+          "type": "section-intro",
+          "layout": "three-columns",
+          "_has_deep_dive": true,
+          "_deep_dive_hint": "↓ deeper dive below",
+          "content": {
+            "headline": "Section Title",
+            "columns": [
+              { "icon": "🔀", "label": "Topic One",   "color": "#ffa657" },
+              { "icon": "🧩", "label": "Topic Two",   "color": "#58a6ff" },
+              { "icon": "🔌", "label": "Topic Three", "color": "#3fb950" }
+            ]
+          },
+          "speaker_notes": "Overview of this section."
+        },
+        {
+          "id": "2a",
+          "type": "deep-dive",
+          "layout": "left-visual-right-text",
+          "content": {
+            "headline": "Deep Dive: Topic One",
+            "text": [
+              "First bullet point here",
+              "Second bullet point here",
+              "Third bullet point here"
+            ],
+            "animations": [
+              {
+                "click": 1,
+                "elements": ["text[0]"],
+                "effect": "appear"
+              },
+              {
+                "click": 2,
+                "elements": ["text[1]", "text[2]"],
+                "effect": "appear"
+              }
+            ]
+          },
+          "speaker_notes": "Deep dive notes. [CLICK] after first bullet. [CLICK] for remaining."
+        },
+        {
+          "id": "2b",
+          "type": "deep-dive",
+          "layout": "centered",
+          "content": {
+            "headline": "Deep Dive: Topic Two",
+            "text": [
+              "First point",
+              "Second point"
+            ]
+          },
+          "speaker_notes": "Notes for 2b."
+        }
+      ]
+    },
+
+    {
+      "id": "col-3",
+      "_comment": "SECTION WITH NO DEEP DIVES: single slide, no vertical array",
+      "slides": [
+        {
+          "id": "3",
+          "type": "grid-cards",
+          "layout": "2x3-grid",
+          "content": {
+            "headline": "A Grid Slide Example",
+            "grid": [
+              { "icon": "🔓", "name": "Card One",   "descriptor": "Short description" },
+              { "icon": "🛡️", "name": "Card Two",   "descriptor": "Short description" },
+              { "icon": "🔌", "name": "Card Three", "descriptor": "Short description" },
+              { "icon": "👥", "name": "Card Four",  "descriptor": "Short description" },
+              { "icon": "📦", "name": "Card Five",  "descriptor": "Short description" },
+              { "icon": "🏠", "name": "Card Six",   "descriptor": "Short description" }
+            ]
+          },
+          "speaker_notes": "Walk through each principle briefly."
+        }
+      ]
+    },
+
+    {
+      "id": "col-4",
+      "_comment": "NARRATIVE SLIDE: story-style, no bullets, fragment-revealed paragraphs",
+      "slides": [
+        {
+          "id": "4",
+          "type": "narrative",
+          "layout": "full-centered-story",
+          "content": {
+            "headline": null,
+            "fragments": [
+              { "text": "Opening line of your story.", "style": "normal" },
+              { "text": "Line two — build tension.", "style": "normal" },
+              { "text": "Line three — the turn.", "style": "normal" },
+              { "text": "The payoff line.", "style": "large-bold-highlight" }
+            ]
+          },
+          "speaker_notes": "Deliver slowly. Pause after each fragment. This is your emotional beat."
+        }
+      ]
+    },
+
+    {
+      "id": "col-5",
+      "_comment": "FLOW DIAGRAM SLIDE: horizontal step-flow",
+      "slides": [
+        {
+          "id": "5",
+          "type": "demo-transition",
+          "layout": "flow-diagram-centered",
+          "content": {
+            "headline": "The Flow",
+            "flow": {
+              "type": "horizontal-flow",
+              "steps": [
+                { "label": "Step One",   "actor": "Person A", "color": "#e6edf3" },
+                { "label": "Step Two",   "actor": "Agent B",  "color": "#bc8cff" },
+                { "label": "Step Three", "actor": "Agent C",  "color": "#58a6ff" },
+                { "label": "Step Four",  "actor": "Output",   "color": "#ffa657" }
+              ]
+            },
+            "subtext": "One sentence summary of what just happened."
+          },
+          "speaker_notes": "Walk through the flow left to right."
+        }
+      ]
+    },
+
+    {
+      "id": "col-6",
+      "_comment": "CTA SLIDE: call to action / closing",
+      "slides": [
+        {
+          "id": "6",
+          "type": "cta",
+          "layout": "top-framing-bottom-cta",
+          "content": {
+            "headline": "Closing Statement or Thank You",
+            "cta_cards": [
+              {
+                "icon": "🐙",
+                "label": "GitHub",
+                "value": "github.com/your/repo",
+                "subtext": "Explore the code",
+                "color": "#58a6ff"
+              },
+              {
+                "icon": "💬",
+                "label": "Community",
+                "value": "your-community-link",
+                "subtext": "Join the conversation",
+                "color": "#3fb950"
+              },
+              {
+                "icon": "📬",
+                "label": "Contact",
+                "value": "your@email.com",
+                "subtext": "Get in touch",
+                "color": "#bc8cff"
+              }
+            ],
+            "qr_code": {
+              "url": "https://github.com/your/repo",
+              "label": "Scan to explore",
+              "position": "bottom-right"
+            }
+          },
+          "speaker_notes": "Close with energy. Point to the QR code. Stay available for questions."
+        }
+      ]
+    }
+
+  ]
+}
