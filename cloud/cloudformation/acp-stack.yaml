@@ -14,7 +14,7 @@ Description: >
       The open-source team chat platform powering ACP's structured channels.
     - openclaw-zulip (genedragon/openclaw-zulip, MIT)
       https://github.com/genedragon/openclaw-zulip
-      The OpenClaw ↔ Zulip bridge and native Zulip plugin.
+      The native OpenClaw Zulip channel plugin (replaces earlier bridge approach).
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -478,15 +478,24 @@ Resources:
             /home/zulip/deployments/current/scripts/restart-server
           fi
 
-          # ── openclaw-zulip bridge ────────────────────────────────────────
-          echo "[6/7] Installing openclaw-zulip bridge..."
-          sudo -u ubuntu bash << 'BRIDGE_EOF'
+          # ── openclaw-zulip native plugin ─────────────────────────────────
+          echo "[6/7] Installing openclaw-zulip native plugin..."
+          sudo -u ubuntu bash << 'PLUGIN_EOF'
           cd ~
           export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-          # Clone and configure the bridge (user completes bot credentials post-deploy)
-          mkdir -p ~/acp
-          git clone https://github.com/genedragon/openclaw-zulip.git ~/acp/openclaw-zulip 2>/dev/null || true
-          BRIDGE_EOF
+
+          # Install the native Zulip channel plugin into OpenClaw's extensions dir
+          mkdir -p ~/.openclaw/extensions
+          git clone https://github.com/genedragon/openclaw-zulip.git ~/.openclaw/extensions/zulip 2>/dev/null ||             git -C ~/.openclaw/extensions/zulip pull --ff-only
+
+          # Symlink shared deps (uses OpenClaw's bundled zod + plugin SDK)
+          mkdir -p ~/.openclaw/extensions/zulip/node_modules
+          OPENCLAW_DIR=$(dirname $(dirname $(which openclaw)) 2>/dev/null || echo "")
+          if [ -n "$OPENCLAW_DIR" ]; then
+            ln -sf "$OPENCLAW_DIR/lib/node_modules/openclaw/node_modules/zod"               ~/.openclaw/extensions/zulip/node_modules/zod 2>/dev/null || true
+            ln -sf "$OPENCLAW_DIR/lib/node_modules/openclaw"               ~/.openclaw/extensions/zulip/node_modules/openclaw 2>/dev/null || true
+          fi
+          PLUGIN_EOF
 
           # ── OpenClaw configuration ───────────────────────────────────────
           echo "[7/7] Configuring OpenClaw..."
@@ -532,7 +541,7 @@ Resources:
           echo "  1. Connect via SSM: aws ssm start-session --target $(curl -s http://169.254.169.254/latest/meta-data/instance-id)"
           echo "  2. Get gateway token: aws ssm get-parameter --name /acp/gateway-token --with-decryption"
           echo "  3. Configure Zulip: https://${ZulipDomain}"
-          echo "  4. Complete openclaw-zulip bridge setup: ~/acp/openclaw-zulip/README.md"
+          echo "  4. Configure Zulip plugin: openclaw channels add --channel zulip"
           echo "=========================================="
 
   EIPAssociation:
