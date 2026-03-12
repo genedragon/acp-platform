@@ -1,0 +1,55 @@
+# Team Mode Configuration
+# Copy this to your deployment and customize
+
+deployment:
+  mode: team
+  name: "my-team-acp"
+
+# AWS
+aws:
+  region: us-west-2
+  instance_type: t4g.large    # ~$60-80/month; scale up for 50+ users
+
+# OpenClaw
+openclaw:
+  model: amazon-bedrock/us.anthropic.claude-sonnet-4-6
+  sandbox_mode: true           # REQUIRED for team mode — isolates non-main agents
+  workspace: ~/.openclaw/workspace-main
+
+# Zulip
+zulip:
+  hostname: ""                 # e.g. team.example.com
+
+# P2P Chat — role-based for team mode
+p2p_chat:
+  enabled: true
+  scope: members-only          # Options: all, members-only, admin-only, disabled
+  overrides:
+    - role: guest
+      can_dm: false
+    - role: member
+      can_dm: true
+    - role: admin
+      can_dm: true
+
+# PVM — REQUIRED for team mode
+pvm:
+  enabled: true
+  # Set PVM_API_URL after deploying PVM backend
+  api_url: ""
+  default_ttl_minutes: 60
+
+# S3 storage
+s3:
+  bucket: ""
+
+# SES email — recommended for team mode
+ses:
+  enabled: true
+  region: us-west-2
+  from_address: ""
+
+# Audit logging
+audit:
+  cloudtrail: true
+  retention_days: 90
