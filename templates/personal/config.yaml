@@ -1,0 +1,43 @@
+# Personal Mode Configuration
+# Copy this to your deployment and customize
+
+deployment:
+  mode: personal
+  name: "my-acp"
+
+# AWS
+aws:
+  region: us-west-2
+  instance_type: t4g.medium   # ~$25-35/month; upgrade to t4g.large for heavy use
+
+# OpenClaw
+openclaw:
+  model: amazon-bedrock/us.anthropic.claude-sonnet-4-6
+  sandbox_mode: false          # Single user — sandbox optional
+  workspace: ~/.openclaw/workspace-main
+
+# Zulip
+zulip:
+  # Set ZULIP_HOSTNAME in environment or here
+  hostname: ""                 # e.g. my-acp.example.com
+
+# P2P Chat — N/A for personal mode (single user)
+p2p_chat:
+  enabled: false
+
+# PVM — optional for personal mode
+pvm:
+  enabled: false
+
+# S3 storage
+s3:
+  # Bucket created automatically by deploy.sh
+  # Set bucket name here after first deploy
+  bucket: ""
+
+# SES email (optional — needed for Zulip invitations)
+ses:
+  enabled: false
+  region: us-west-2
+  # Verified sender address
+  from_address: ""

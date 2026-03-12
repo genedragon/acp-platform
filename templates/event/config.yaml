@@ -1,0 +1,65 @@
+# Event Mode Configuration
+# Copy this to your deployment and customize
+
+deployment:
+  mode: event
+  name: "my-event-acp"
+  # Auto-teardown: set to number of days, or 0 to disable
+  auto_teardown_days: 7
+
+# AWS
+aws:
+  region: us-west-2
+  instance_type: t4g.large
+
+# OpenClaw
+openclaw:
+  model: amazon-bedrock/us.anthropic.claude-sonnet-4-6
+  sandbox_mode: true           # Recommended for event mode
+
+# Zulip
+zulip:
+  hostname: ""                 # e.g. myconference.example.com
+
+# P2P Chat — FULLY CONFIGURABLE per event instance
+# Examples below — uncomment what fits your event type:
+
+# Conference (P2P between attendees, disable for panels):
+p2p_chat:
+  enabled: true
+  scope: members-only
+  channels:
+    - name: "general"
+      p2p: all
+    - name: "speakers-lounge"
+      p2p: admin-only
+
+# Wedding (P2P for guests, full social):
+# p2p_chat:
+#   enabled: true
+#   scope: all
+
+# Corporate event (no P2P, info-only):
+# p2p_chat:
+#   enabled: false
+
+# PVM — required for event mode
+pvm:
+  enabled: true
+  api_url: ""
+  default_ttl_minutes: 30      # Shorter TTL appropriate for events
+
+# S3 storage
+s3:
+  bucket: ""
+
+# SES email
+ses:
+  enabled: true
+  region: us-west-2
+  from_address: ""
+
+# Audit logging
+audit:
+  cloudtrail: true
+  retention_days: 30           # Shorter retention for temporary events
