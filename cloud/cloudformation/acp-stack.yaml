@@ -1,0 +1,555 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  ACP (Agentic Collaboration Platform) — Full-stack deployment.
+  Deploys OpenClaw + Zulip on a single EC2 Graviton instance.
+
+  Acknowledgements:
+    - OpenClaw on AWS (aws-samples/sample-OpenClaw-on-AWS-with-Bedrock, MIT)
+      https://github.com/aws-samples/sample-OpenClaw-on-AWS-with-Bedrock
+      Provided the reference architecture for OpenClaw EC2 deployment,
+      NVM/Node.js installation patterns, IMDSv2 metadata detection,
+      IAM role design, and SSM Session Manager access model.
+    - Zulip (zulip/zulip, Apache 2.0)
+      https://github.com/zulip/zulip
+      The open-source team chat platform powering ACP's structured channels.
+    - openclaw-zulip (genedragon/openclaw-zulip, MIT)
+      https://github.com/genedragon/openclaw-zulip
+      The OpenClaw ↔ Zulip bridge and native Zulip plugin.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Instance Configuration"
+        Parameters:
+          - InstanceType
+          - KeyPairName
+      - Label:
+          default: "Network & Access"
+        Parameters:
+          - SourceCidr
+          - AllowSSH
+      - Label:
+          default: "OpenClaw Configuration"
+        Parameters:
+          - OpenClawModel
+          - EnableSandbox
+      - Label:
+          default: "Zulip Configuration"
+        Parameters:
+          - ZulipDomain
+          - ZulipAdminEmail
+      - Label:
+          default: "Email (SES)"
+        Parameters:
+          - SESRegion
+          - SESFromEmail
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: "t4g.large"
+    Description: "Graviton ARM recommended (20-40% cheaper). t4g.large minimum for Zulip."
+    AllowedValues:
+      - "t4g.large"
+      - "t4g.xlarge"
+      - "t4g.2xlarge"
+      - "c6g.large"
+      - "c6g.xlarge"
+      - "c7g.large"
+      - "c7g.xlarge"
+      - "m6g.large"
+      - "m6g.xlarge"
+
+  KeyPairName:
+    Type: String
+    Default: "none"
+    Description: "EC2 key pair for emergency SSH access. Set to 'none' to use SSM only (recommended)."
+
+  SourceCidr:
+    Type: String
+    Description: "Your public IP in CIDR notation (e.g. 1.2.3.4/32). Find yours at checkip.amazonaws.com. Used for ports 80, 443, and optionally 22."
+    AllowedPattern: "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"
+    ConstraintDescription: "Must be a valid CIDR block (e.g. 203.0.113.0/24)"
+
+  AllowSSH:
+    Type: String
+    Default: "false"
+    Description: "Open port 22 to SourceCidr. Not recommended — use SSM Session Manager instead."
+    AllowedValues: ["true", "false"]
+
+  OpenClawModel:
+    Type: String
+    Default: "us.anthropic.claude-sonnet-4-6"
+    Description: "Bedrock model for the OpenClaw agent."
+    AllowedValues:
+      - "us.anthropic.claude-sonnet-4-6"
+      - "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+      - "us.amazon.nova-pro-v1:0"
+      - "us.amazon.nova-lite-v1:0"
+
+  EnableSandbox:
+    Type: String
+    Default: "true"
+    Description: "Install Docker for sandboxed agent execution (recommended)."
+    AllowedValues: ["true", "false"]
+
+  ZulipDomain:
+    Type: String
+    Description: "Domain for your Zulip server (e.g. zulip.example.com or your EC2 public DNS). Used for SSL cert and realm configuration."
+    Default: ""
+
+  ZulipAdminEmail:
+    Type: String
+    Description: "Email address for the initial Zulip admin account."
+    Default: ""
+
+  SESRegion:
+    Type: String
+    Default: "us-west-2"
+    Description: "AWS region where SES is configured for outbound email."
+    AllowedValues:
+      - "us-east-1"
+      - "us-west-2"
+      - "eu-west-1"
+      - "ap-southeast-2"
+
+  SESFromEmail:
+    Type: String
+    Description: "Verified SES sender email for Zulip notifications."
+    Default: ""
+
+Conditions:
+  HasKeyPair: !Not [!Equals [!Ref KeyPairName, "none"]]
+  SSHEnabled: !And
+    - !Equals [!Ref AllowSSH, "true"]
+    - !Not [!Equals [!Ref KeyPairName, "none"]]
+  DockerEnabled: !Equals [!Ref EnableSandbox, "true"]
+
+Mappings:
+  # Ubuntu 22.04 LTS ARM64 AMIs (update periodically)
+  AmiMap:
+    us-east-1:
+      arm64: ami-0c7217cdde317cfec
+    us-east-2:
+      arm64: ami-05fb0b8c1424f266b
+    us-west-1:
+      arm64: ami-0ce2cb35386fc22e9
+    us-west-2:
+      arm64: ami-03839f1dba75bb628
+    eu-west-1:
+      arm64: ami-0905a3c97561e0b69
+    eu-west-2:
+      arm64: ami-0e5f882be1900e43b
+    eu-central-1:
+      arm64: ami-026c3177c9bd54288
+    ap-southeast-1:
+      arm64: ami-078c1149d8ad719a7
+    ap-southeast-2:
+      arm64: ami-04f5097681773b989
+    ap-northeast-1:
+      arm64: ami-02a2700d37baeef8b
+
+Resources:
+
+  # ── VPC & Networking ──────────────────────────────────────────────────────
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-vpc"
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
+
+  # ── Security Group ────────────────────────────────────────────────────────
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "ACP Platform — inbound HTTP/HTTPS from SourceCidr, SSH optional"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref SourceCidr
+          Description: "HTTP (Zulip redirect to HTTPS)"
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref SourceCidr
+          Description: "HTTPS (Zulip web UI, API, mobile)"
+        - !If
+          - SSHEnabled
+          - IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: !Ref SourceCidr
+            Description: "SSH emergency access"
+          - !Ref AWS::NoValue
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: "0.0.0.0/0"
+          Description: "All outbound (SES, package repos, Bedrock)"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-sg"
+
+  # ── IAM Role ──────────────────────────────────────────────────────────────
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-instance-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: ACPPlatformPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Bedrock — invoke models
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: "*"
+              # SES — send email (Zulip notifications)
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: "*"
+              # S3 — workspace bucket (scoped to stack)
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${AWS::StackName}-*"
+              # SSM Parameter Store — config storage
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                  - ssm:PutParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/acp/*"
+              # PVM — Step Functions + DynamoDB + Lambda (for PVM skill)
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                  - states:DescribeExecution
+                Resource: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:pvm-*"
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/pvm-*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-role"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  # ── EC2 Instance ──────────────────────────────────────────────────────────
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-eip"
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !FindInMap [AmiMap, !Ref "AWS::Region", arm64]
+      KeyName: !If [HasKeyPair, !Ref KeyPairName, !Ref AWS::NoValue]
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
+            DeleteOnTermination: true
+            Encrypted: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          exec > >(tee /var/log/acp-setup.log) 2>&1
+
+          echo "=========================================="
+          echo "ACP Platform Setup: $(date)"
+          echo "=========================================="
+
+          export DEBIAN_FRONTEND=noninteractive
+
+          # ── IMDSv2 metadata ──────────────────────────────────────────────
+          IMDS_TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+            -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" 2>/dev/null || echo "")
+          if [ -n "$IMDS_TOKEN" ]; then
+            INSTANCE_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" \
+              http://169.254.169.254/latest/meta-data/placement/region 2>/dev/null || echo "${AWS::Region}")
+          else
+            INSTANCE_REGION="${AWS::Region}"
+          fi
+          echo "Region: $INSTANCE_REGION"
+
+          # ── System update ────────────────────────────────────────────────
+          echo "[1/7] Updating system..."
+          apt-get update -q
+          apt-get upgrade -y -q
+          apt-get install -y -q curl unzip git python3 python3-pip
+
+          # ── AWS CLI ──────────────────────────────────────────────────────
+          echo "[2/7] Installing AWS CLI..."
+          curl -s "https://awscli.amazonaws.com/awscli-exe-linux-$(arch).zip" -o /tmp/awscliv2.zip
+          unzip -q /tmp/awscliv2.zip -d /tmp/awscli
+          /tmp/awscli/aws/install
+          rm -rf /tmp/awscli /tmp/awscliv2.zip
+
+          # ── Docker (sandbox) ─────────────────────────────────────────────
+          if [ "${EnableSandbox}" = "true" ]; then
+            echo "[3/7] Installing Docker..."
+            install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+            chmod a+r /etc/apt/keyrings/docker.asc
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+              https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+              > /etc/apt/sources.list.d/docker.list
+            apt-get update -q
+            apt-get install -y -q docker-ce docker-ce-cli containerd.io
+            systemctl enable docker
+            usermod -aG docker ubuntu
+          else
+            echo "[3/7] Skipping Docker (EnableSandbox=false)"
+          fi
+
+          # ── Node.js + OpenClaw ───────────────────────────────────────────
+          echo "[4/7] Installing Node.js + OpenClaw..."
+          sudo -u ubuntu bash << 'UBUNTU_EOF'
+          cd ~
+          NVM_VERSION="v0.40.1"
+          for i in 1 2 3; do
+            curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" \
+              -o /tmp/nvm-install.sh && break
+            sleep 5
+          done
+          bash /tmp/nvm-install.sh && rm -f /tmp/nvm-install.sh
+
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          nvm install 22 && nvm alias default 22
+
+          npm config set registry https://registry.npmjs.org/
+          if [ "$(uname -m)" = "aarch64" ]; then
+            npm install -g openclaw@latest --timeout=300000 --ignore-scripts || \
+              (npm cache clean --force && npm install -g openclaw@latest --timeout=300000 --ignore-scripts)
+          else
+            npm install -g openclaw@latest --timeout=300000 || \
+              (npm cache clean --force && npm install -g openclaw@latest --timeout=300000)
+          fi
+
+          grep -q 'NVM_DIR' ~/.bashrc || \
+            echo 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"' >> ~/.bashrc
+          UBUNTU_EOF
+
+          # Create system-wide openclaw wrapper
+          OPENCLAW_MJS=$(find /home/ubuntu/.nvm -name "openclaw.mjs" 2>/dev/null | head -1)
+          NODE_BIN=$(find /home/ubuntu/.nvm -name node -type f 2>/dev/null | head -1)
+          if [ -z "$OPENCLAW_MJS" ] || [ -z "$NODE_BIN" ]; then
+            echo "FATAL: OpenClaw installation failed"
+            exit 1
+          fi
+          printf '#!/bin/bash\nexec %s %s "$@"\n' "$NODE_BIN" "$OPENCLAW_MJS" > /usr/local/bin/openclaw
+          chmod +x /usr/local/bin/openclaw
+          /usr/local/bin/openclaw --version && echo "OpenClaw OK" || { echo "FATAL: openclaw wrapper broken"; exit 1; }
+
+          # ── Zulip ────────────────────────────────────────────────────────
+          echo "[5/7] Installing Zulip..."
+          # Install PostgreSQL 16 (required; avoid 18 io_uring issues on ARM)
+          apt-get install -y -q postgresql-common
+          /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          apt-get install -y -q postgresql-16
+
+          # Download and run Zulip installer
+          ZULIP_VERSION="10.0-0"
+          curl -fLO "https://download.zulip.com/server/zulip-server-${!ZULIP_VERSION}.tar.gz"
+          tar -xf "zulip-server-${!ZULIP_VERSION}.tar.gz"
+
+          ZULIP_DOMAIN="${ZulipDomain}"
+          ZULIP_ADMIN="${ZulipAdminEmail}"
+          if [ -z "$ZULIP_DOMAIN" ]; then
+            # Fall back to EC2 public DNS
+            ZULIP_DOMAIN=$(curl -s -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" \
+              http://169.254.169.254/latest/meta-data/public-hostname 2>/dev/null || echo "localhost")
+          fi
+
+          "zulip-server-${!ZULIP_VERSION}/scripts/setup/install" \
+            --certbot-skip \
+            --self-signed-cert \
+            --hostname="$ZULIP_DOMAIN" \
+            --email="${!ZULIP_ADMIN:-admin@$ZULIP_DOMAIN}"
+
+          # Configure SES email backend
+          if [ -n "${SESFromEmail}" ]; then
+            cat >> /etc/zulip/settings.py << ZULIP_SES_EOF
+          EMAIL_BACKEND = "django_ses.SESBackend"
+          AWS_SES_REGION_NAME = "${SESRegion}"
+          NOREPLY_EMAIL_ADDRESS = "${SESFromEmail}"
+          ADD_TOKENS_TO_NOREPLY_ADDRESS = False
+          AWS_SES_AUTO_THROTTLE = None
+          ZULIP_SES_EOF
+            /home/zulip/deployments/current/scripts/restart-server
+          fi
+
+          # ── openclaw-zulip bridge ────────────────────────────────────────
+          echo "[6/7] Installing openclaw-zulip bridge..."
+          sudo -u ubuntu bash << 'BRIDGE_EOF'
+          cd ~
+          export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          # Clone and configure the bridge (user completes bot credentials post-deploy)
+          mkdir -p ~/acp
+          git clone https://github.com/genedragon/openclaw-zulip.git ~/acp/openclaw-zulip 2>/dev/null || true
+          BRIDGE_EOF
+
+          # ── OpenClaw configuration ───────────────────────────────────────
+          echo "[7/7] Configuring OpenClaw..."
+          loginctl enable-linger ubuntu
+          sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw
+
+          GATEWAY_TOKEN=$(openssl rand -hex 24)
+          sudo -u ubuntu tee /home/ubuntu/.openclaw/openclaw.json > /dev/null << OCJSON
+          {
+            "gateway": {
+              "mode": "local",
+              "port": 18789,
+              "token": "$GATEWAY_TOKEN"
+            },
+            "model": "${OpenClawModel}",
+            "bedrock": {
+              "region": "$INSTANCE_REGION"
+            },
+            "sandbox": {
+              "enabled": ${EnableSandbox}
+            }
+          }
+          OCJSON
+          chown ubuntu:ubuntu /home/ubuntu/.openclaw/openclaw.json
+          chmod 600 /home/ubuntu/.openclaw/openclaw.json
+
+          # Store gateway token in SSM for retrieval
+          aws ssm put-parameter \
+            --region "$INSTANCE_REGION" \
+            --name "/acp/gateway-token" \
+            --value "$GATEWAY_TOKEN" \
+            --type SecureString \
+            --overwrite 2>/dev/null || true
+
+          # Start OpenClaw gateway as ubuntu user service
+          sudo -u ubuntu XDG_RUNTIME_DIR="/run/user/1000" \
+            /usr/local/bin/openclaw gateway start 2>/dev/null || true
+
+          echo "=========================================="
+          echo "ACP Platform Setup Complete: $(date)"
+          echo ""
+          echo "Next steps:"
+          echo "  1. Connect via SSM: aws ssm start-session --target $(curl -s http://169.254.169.254/latest/meta-data/instance-id)"
+          echo "  2. Get gateway token: aws ssm get-parameter --name /acp/gateway-token --with-decryption"
+          echo "  3. Configure Zulip: https://${ZulipDomain}"
+          echo "  4. Complete openclaw-zulip bridge setup: ~/acp/openclaw-zulip/README.md"
+          echo "=========================================="
+
+  EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref Instance
+      EIP: !Ref ElasticIP
+
+Outputs:
+  PublicIP:
+    Description: "Elastic IP address (static)"
+    Value: !Ref ElasticIP
+
+  ZulipURL:
+    Description: "Zulip web interface"
+    Value: !Sub "https://${ZulipDomain}"
+
+  SSMConnect:
+    Description: "Connect via SSM Session Manager (no SSH needed)"
+    Value: !Sub "aws ssm start-session --target ${Instance} --region ${AWS::Region}"
+
+  GatewayTokenSSM:
+    Description: "Retrieve OpenClaw gateway token from SSM"
+    Value: !Sub "aws ssm get-parameter --name /acp/gateway-token --with-decryption --region ${AWS::Region}"
+
+  SetupLog:
+    Description: "Monitor setup progress"
+    Value: !Sub "aws ssm start-session --target ${Instance} --region ${AWS::Region} --document-name AWS-StartInteractiveCommand --parameters command='tail -f /var/log/acp-setup.log'"
