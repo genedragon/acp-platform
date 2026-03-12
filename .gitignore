@@ -24,6 +24,12 @@ config.json
 aws-credentials
 ~/.aws/
 
+# Cloud provider credentials - NEVER COMMIT
+.aws/
+.azure/
+.gcloud/
+terraform.tfstate*
+
 # Deployment state
 .terraform/
 *.tfstate
@@ -62,3 +68,4 @@ __pycache__/
 # Local testing
 local-test/
 scratch/
+
