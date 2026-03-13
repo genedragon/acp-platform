@@ -127,7 +127,7 @@ Full architecture: [docs/architecture.md](docs/architecture.md)
 
 **Business Source License 1.1** — see [LICENSE](LICENSE)
 
-Free for non-production and self-hosted use. Converts automatically to **Apache 2.0** four years after each version's release date. Commercial managed-service use requires a separate license — contact the maintainers.
+Free for all uses — including internal commercial deployment. Converts automatically to **Apache 2.0** four years after each version's release date. The only restriction: you may not offer the Licensed Work itself as a hosted or managed service to third parties. See [LICENSE](LICENSE) for the full Additional Use Grant.
 
 Contributing? Please read and agree to the [CLA](CLA.md).
 
@@ -137,3 +137,4 @@ Contributing? Please read and agree to the [CLA](CLA.md).
 - PVM: [MIT](https://github.com/genedragon/permissions-vending-machine/blob/master/LICENSE)
 - Zulip: [Apache 2.0](https://github.com/zulip/zulip/blob/main/LICENSE)
 - openclaw-zulip: [MIT](https://github.com/genedragon/openclaw-zulip/blob/main/LICENSE)
+
