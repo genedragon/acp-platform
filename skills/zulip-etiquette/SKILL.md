@@ -195,6 +195,126 @@ Zulip topics are threads within a stream. Staying on-topic keeps conversations r
 
 ---
 
+
+---
+
+## Thinking Reactions: Signaling Work in Progress
+
+When you receive a complex request that requires processing, add a **thinking reaction** to immediately signal to the user that you're working. This closes the "silence gap" — the awkward window between receiving a message and sending a response.
+
+> **⚠️ Implementation status:** Full `react_loop_start`/`react_loop_stop` tooling is in development (Track A). Use the **interim pattern** below until those tools ship.
+
+---
+
+### Why Thinking Reactions?
+
+**Without:** Message arrives → 5–30 seconds of silence → response appears. User wonders: *Did the bot see this? Is it working? Did it crash?*
+
+**With:** Message arrives → 🤔 appears instantly → processing happens → 🤔 disappears → response arrives. User knows: *Bot got it, bot is working.*
+
+---
+
+### Interim Pattern (Use Now)
+
+Until `react_loop_start` ships, use the existing `message(action=react)` tool manually:
+
+```
+# Step 1: React immediately on receipt
+message(action=react, messageId=<user_message_id>, emoji="🤔", channel=zulip)
+
+# Step 2: Do the work
+zulip_fetch_messages(...)  # or whatever processing is needed
+
+# Step 3: Remove the reaction when done
+message(action=react, messageId=<user_message_id>, emoji="🤔", remove=true, channel=zulip)
+
+# Step 4: Send response
+message(action=send, ...)
+```
+
+**When to use:**
+- ✅ Any task that takes > 1 second (history fetch, analysis, coordination)
+- ✅ Any task where you don't know how long it will take
+- ❌ Skip for immediate, sub-500ms responses
+
+**Always clean up:** Remove the reaction before or immediately after sending your response. A lingering 🤔 after you've replied looks broken.
+
+---
+
+### Full Loop Pattern (Coming Soon — `react_loop_start`)
+
+Once the loop tooling ships, agents will be able to auto-rotate emoji every 6 seconds for long-running tasks:
+
+```
+# Start loop (runs automatically in background)
+react_loop_start(messageId=<id>, icons=["🤔", "🧠", "⏳"])
+
+# Do work (however long it takes — loop keeps rotating)
+fetch_and_analyze_history()
+
+# Stop loop (removes the final reaction)
+react_loop_stop(loop_id)
+
+# Send response
+message(action=send, ...)
+```
+
+**Loop behavior (when available):**
+- Rotates through icons every 6 seconds: 🤔 → 🧠 → ⏳ → 🤔 → ...
+- Auto-stops after **10 minutes** with no explicit stop call (orphan TTL)
+- `react_loop_stop` removes only the last rotating emoji — not other reactions on the message
+- Rate-limit safe: each loop uses 2 API calls/6s = 20 calls/min; max 15 concurrent loops enforced
+
+---
+
+### Emoji Reference
+
+**Standard thinking sequence:** 🤔 → 🧠 → ⏳
+
+| Emoji | Meaning | Zulip name |
+|-------|---------|------------|
+| 🤔 | Thinking / processing | `:thinking_face:` |
+| 🧠 | Analyzing data | `:brain:` |
+| ⏳ | Time-intensive work | `:hourglass_flowing_sand:` |
+
+**Completion signals (optional, for long tasks):**
+- ✅ `:white_check_mark:` — Done with success
+- ⚠️ `:warning:` — Issue encountered
+- 🚀 `:rocket:` — Urgent / prioritized
+
+**Recommendation:** Stick with 🤔 for the interim pattern. Consistency across all agents matters more than variety.
+
+---
+
+### Common Patterns
+
+**Pattern A: Fetch & Summarize**
+```
+1. React 🤔 on user message
+2. zulip_fetch_messages (limit=100+)
+3. Analyze & summarize
+4. Remove 🤔
+5. Send summary
+```
+
+**Pattern B: Multi-step Analysis**
+```
+1. React 🤔
+2. Fetch data, process, coordinate
+3. Generate output
+4. Remove 🤔
+5. Send response + attach file if needed
+```
+
+---
+
+### Tips
+
+- **React first, then work** — don't do work then react; the whole point is the instant signal
+- **Always clean up** — remove the reaction in your error handlers too, not just the happy path
+- **One thinking reaction per message** — don't stack multiple emoji on the same message
+- **Don't react to your own messages** — only react to the user's message you're responding to
+
 ## Channel Privacy & Personal Use
 
 ### Private Channels (Recommended Default)
@@ -289,4 +409,5 @@ When you first join a Zulip workspace:
 
 ---
 
-**Last updated:** 2026-03-11 15:10 UTC
+**Last updated:** 2026-03-14 00:09 UTC
+
