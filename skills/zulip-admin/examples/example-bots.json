@@ -1,0 +1,18 @@
+[
+  {
+    "_WARNING": "Replace ALL passwords with strong, unique values before use. Min 16 chars, use a password manager. NEVER commit real passwords to version control.",
+    "email": "bot1@your-realm.org",
+    "name": "Bot One",
+    "password": "CHANGE_ME_STRONG_PASSWORD_HERE"
+  },
+  {
+    "email": "bot2@your-realm.org",
+    "name": "Bot Two",
+    "password": "CHANGE_ME_STRONG_PASSWORD_HERE"
+  },
+  {
+    "email": "bot3@your-realm.org",
+    "name": "Bot Three",
+    "password": "CHANGE_ME_STRONG_PASSWORD_HERE"
+  }
+]
