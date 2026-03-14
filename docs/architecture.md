@@ -4,45 +4,11 @@
 
 ACP is a layered platform. Each layer is independently swappable in the future, but the default stack is:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Users                                    │
-│              (web browser, mobile, Zulip apps)                  │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ HTTPS / WSS
-┌───────────────────────────▼─────────────────────────────────────┐
-│                    Zulip Server                                  │
-│   Channels · Topics · @mentions · DMs · File sharing           │
-│                   (Collaboration UX)                            │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ Bot API / Webhooks
-┌───────────────────────────▼─────────────────────────────────────┐
-│                 openclaw-zulip Bridge                            │
-│          Routes messages → OpenClaw gateway                     │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ HTTP (local)
-┌───────────────────────────▼─────────────────────────────────────┐
-│                  OpenClaw Gateway                                │
-│   Session management · Agent routing · Tool policy             │
-│                   (Agent Runtime)                               │
-└──────────┬────────────────┬───────────────────────┬────────────┘
-           │                │                       │
-   ┌───────▼──────┐ ┌───────▼──────┐      ┌────────▼──────┐
-   │  Main Agent  │ │  Agent N...  │      │  Sandbox      │
-   │  (trusted)   │ │  (isolated)  │      │  Agents       │
-   └───────┬──────┘ └───────┬──────┘      └───────┬───────┘
-           │                │                      │
-           └────────────────┴──────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│                    AWS Services                                  │
-│                                                                  │
-│  ┌────────────┐  ┌──────────┐  ┌───────────┐  ┌─────────────┐  │
-│  │  Bedrock   │  │    S3    │  │    PVM    │  │  CloudWatch │  │
-│  │ (models)   │  │ (files)  │  │  (IAM)   │  │  (audit)    │  │
-│  └────────────┘  └──────────┘  └───────────┘  └─────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
+![ACP System Architecture Overview](assets/system-overview_diagram.png)
+
+### Runtime Architecture
+
+![OpenClaw Agent Runtime Architecture](assets/runtime-architecture_diagram.png)
 
 ## Components
 
@@ -118,6 +84,8 @@ See [security.md](security.md) for the full security overview.
 
 ## Data Flow
 
+![ACP Message Flow Through System](assets/message-flow_diagram.png)
+
 1. User posts message in Zulip channel/topic
 2. `openclaw-zulip` plugin receives event via Zulip event queue API
 3. Bridge POSTs to OpenClaw Gateway (`/v1/responses`)
@@ -129,6 +97,8 @@ See [security.md](security.md) for the full security overview.
 ---
 
 ## AWS Infrastructure (CloudFormation)
+
+![ACP AWS Infrastructure & Deployment](assets/aws-infrastructure_diagram.png)
 
 See `cloud/aws/cloudformation/acp-stack.yaml` for the full template.
 
