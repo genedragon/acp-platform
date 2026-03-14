@@ -51,30 +51,6 @@ cd acp-platform
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    Your Users                        │
-└────────────────────┬────────────────────────────────┘
-                     │ HTTPS
-┌────────────────────▼────────────────────────────────┐
-│              Zulip (Collaboration UX)                │
-│        Channels · Topics · @mentions · DMs          │
-└────────────────────┬────────────────────────────────┘
-                     │ Webhook / Bot API
-┌────────────────────▼────────────────────────────────┐
-│           OpenClaw (Agent Runtime)                   │
-│    Session Mgmt · Tool Use · Multi-Agent Orch        │
-└──────────┬──────────────────────────────────────────┘
-           │
-     ┌─────┴──────────────────┐
-     │                        │
-┌────▼────┐            ┌──────▼──────┐
-│ Bedrock │            │  AWS Infra  │
-│ Models  │            │ S3 · IAM    │
-└─────────┘            │ PVM · SES   │
-                       └─────────────┘
-```
-
 Full architecture: [docs/architecture.md](docs/architecture.md)
 
 ---
