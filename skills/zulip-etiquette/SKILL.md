@@ -193,6 +193,101 @@ Zulip topics are threads within a stream. Staying on-topic keeps conversations r
 - ✅ = Done, resolved
 - 🚀 = Let's ship it
 
+### Thinking Reactions: Signaling Work in Progress
+
+When you receive a complex request that requires processing time (> 1 second), start a **reaction loop** to signal you're actively working. The loop automatically rotates through emoji every 6 seconds until you stop it.
+
+**Why use thinking reactions:**
+- User sees instant feedback that you received and are processing their request
+- Eliminates silence/uncertainty during long tasks
+- Clear visual indicator: rotating emoji = working, stopped = done
+
+**How it works:**
+```
+User sends message
+  ↓
+Start reaction loop: 🤔 (wait 6s) → 🧠 (wait 6s) → ⏳ (repeat...)
+  ↓
+Process request (for however long needed)
+  ↓
+Stop reaction loop (removes final emoji)
+  ↓
+Send response
+```
+
+**When to use:**
+
+✅ **Start reaction loop when:**
+- Fetching message history (`zulip_fetch_messages`)
+- Multi-step processing or analysis
+- Inter-agent coordination (waiting for other bots)
+- Any task taking > 1 second
+- **You don't know exact task duration**
+
+❌ **Don't use when:**
+- Simple immediate responses (< 500ms)
+- Quick acknowledgments
+
+**Implementation pattern:**
+
+```python
+# 1. Start loop (runs automatically in background)
+zulip_react_loop_start(
+    messageId=user_message_id,
+    icons=["thinking", "brain", "hourglass"]  # default, rotates every 6s
+)
+
+# 2. Do your work (timing doesn't matter - loop keeps running)
+result = zulip_fetch_messages(channel="eng", topic="api", limit=100)
+analysis = analyze_discussion(result)
+
+# 3. Stop loop (removes reaction)
+zulip_react_loop_stop(messageId=user_message_id)
+
+# 4. Send response
+message(action=send, ...)
+```
+
+**Tool reference:**
+- `zulip_react_loop_start(messageId, icons=[])` — Start rotating reactions
+- `zulip_react_loop_stop(messageId)` — Stop and clean up
+- `zulip_react_loop_list()` — List active loops (debugging)
+
+**Emoji sequence (default):**
+- `["thinking", "brain", "hourglass"]` — Thinking → Analyzing → Waiting (6 sec each)
+- Custom sequences allowed but stick with defaults for consistency
+
+**Key behaviors:**
+- **6-second rotation:** Fixed interval, works for all task lengths
+- **Auto-stop after 10 minutes:** Prevents orphaned reactions if you crash
+- **Always clean up:** Call `stop` even if processing fails (use error handlers)
+
+**Common pattern example:**
+
+```bash
+# User asks: "Summarize last week's API discussion"
+
+# Start thinking reactions
+zulip_react_loop_start messageId=6123 icons=["thinking","brain","hourglass"]
+
+# Fetch + process (emoji rotates automatically)
+zulip_fetch_messages channel="engineering" topic="api-redesign" limit=200
+# [analyze for 8 seconds - emoji keeps rotating]
+
+# Stop reactions
+zulip_react_loop_stop messageId=6123
+
+# Send summary
+message action=send target="stream:12" topic="api-redesign" message="Summary: ..."
+```
+
+**User experience:**
+- Sees 🤔 appear instantly → knows you got the message
+- Emoji rotates every 6 seconds → knows you're actively working
+- Emoji disappears → response is coming
+
+Much clearer than silent processing!
+
 ---
 
 ## Channel Privacy & Personal Use
