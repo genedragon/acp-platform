@@ -1,4 +1,6 @@
+# WARNING: Replace all CHANGE_ME passwords with strong, unique passwords (min 16 chars) before use.
+# NEVER commit real passwords to version control. Use a password manager to generate secure values.
 email,name,password
-bot1@your-realm.org,Bot One,SecurePass123
-bot2@your-realm.org,Bot Two,SecurePass123
-bot3@your-realm.org,Bot Three,SecurePass123
+bot1@your-realm.org,Bot One,CHANGE_ME_STRONG_PASSWORD_HERE
+bot2@your-realm.org,Bot Two,CHANGE_ME_STRONG_PASSWORD_HERE
+bot3@your-realm.org,Bot Three,CHANGE_ME_STRONG_PASSWORD_HERE

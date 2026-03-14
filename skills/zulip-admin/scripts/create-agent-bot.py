@@ -10,14 +10,15 @@ This is the CORRECT method for ACP self-hosted instances. Unlike the REST API
 and bot_type=DEFAULT_BOT — which is what the Zulip web UI does.
 
 Usage:
-    sudo -u zulip python3 create-agent-bot.py --name "webMaster" --email "webmaster-bot@acp.wardcrew.org"
-    sudo -u zulip python3 create-agent-bot.py --batch agents.json
-    sudo -u zulip python3 create-agent-bot.py --name "testBot" --email "test-bot@acp.wardcrew.org" --dry-run
+    sudo -u zulip python3 create-agent-bot.py --admin-email admin@your-realm.org --name "webMaster" --email "webmaster-bot@acp.wardcrew.org"
+    sudo -u zulip python3 create-agent-bot.py --admin-email admin@your-realm.org --batch agents.json
+    sudo -u zulip python3 create-agent-bot.py --admin-email admin@your-realm.org --name "testBot" --email "test-bot@acp.wardcrew.org" --dry-run
 
 Requirements:
     - Must run as the 'zulip' system user (sudo -u zulip)
     - Zulip server must be installed at /home/zulip/deployments/current
-    - Gene's admin account (gene.alpert@gmail.com) must exist in the realm
+    - Admin account specified by --admin-email must exist in the realm
+    - Use a dedicated service account for --admin-email, not a personal address
 """
 
 import sys
@@ -58,14 +59,19 @@ def get_realm(realm_id: int = None) -> Realm:
     return realm
 
 
-def get_acting_user(realm: Realm, admin_email: str = "gene.alpert@gmail.com") -> UserProfile:
-    """Get the admin user who will own created bots."""
+def get_acting_user(realm: Realm, admin_email: str) -> UserProfile:
+    """Get the admin user who will own created bots.
+
+    Use a dedicated service account for admin_email, not a personal address.
+    If that account is compromised, all bot accounts it owns are at risk.
+    """
     try:
         return UserProfile.objects.get(realm=realm, delivery_email__iexact=admin_email)
     except UserProfile.DoesNotExist:
         raise RuntimeError(
             f"Admin user '{admin_email}' not found in realm '{realm.name}'. "
-            "Use --admin-email to specify a different admin account."
+            "Use --admin-email to specify a valid admin account. "
+            "Tip: use a dedicated service account, not a personal email."
         )
 
 
@@ -75,11 +81,12 @@ def create_bot(
     realm: Realm,
     acting_user: UserProfile,
     dry_run: bool = False,
+    allow_upgrade: bool = False,
 ) -> dict:
     """
     Create a proper Zulip bot account using do_create_user with bot_type=DEFAULT_BOT.
 
-    Returns a dict with: name, email, api_key, user_id, is_bot
+    Returns a dict with: name, email, api_key, user_id, is_bot, status
     """
     # Check for existing account
     existing = UserProfile.objects.filter(
@@ -98,9 +105,16 @@ def create_bot(
                 "status": "existing",
             }
         else:
+            # Regular user account exists — require explicit opt-in to upgrade
+            if not allow_upgrade:
+                raise RuntimeError(
+                    f"Account '{email}' (ID={existing.id}) already exists as a regular user (is_bot=False). "
+                    "Converting a human account to a bot is potentially irreversible. "
+                    "Pass --allow-upgrade to explicitly authorize this conversion."
+                )
             log.warning(
-                f"User account exists for {email} (ID={existing.id}, is_bot=False). "
-                "Upgrading to proper bot account..."
+                f"⚠️  Upgrading existing user account to bot: {email} (ID={existing.id}). "
+                "This may be irreversible in some Zulip versions."
             )
             if not dry_run:
                 existing.is_bot = True
@@ -157,16 +171,29 @@ def main():
         epilog="""
 EXAMPLES:
   # Create a single bot
-  sudo -u zulip python3 create-agent-bot.py --name "webMaster" --email "webmaster-bot@acp.wardcrew.org"
+  sudo -u zulip python3 create-agent-bot.py \\
+      --admin-email svc-botowner@your-realm.org \\
+      --name "webMaster" --email "webmaster-bot@acp.wardcrew.org"
 
   # Batch create from JSON
-  sudo -u zulip python3 create-agent-bot.py --batch agents.json
+  sudo -u zulip python3 create-agent-bot.py \\
+      --admin-email svc-botowner@your-realm.org \\
+      --batch agents.json
 
   # Dry-run (show what would be created)
-  sudo -u zulip python3 create-agent-bot.py --name "prodMan" --email "prodman-bot@acp.wardcrew.org" --dry-run
+  sudo -u zulip python3 create-agent-bot.py \\
+      --admin-email svc-botowner@your-realm.org \\
+      --name "prodMan" --email "prodman-bot@acp.wardcrew.org" --dry-run
 
   # Output JSON for scripting
-  sudo -u zulip python3 create-agent-bot.py --name "webMaster" --email "webmaster-bot@acp.wardcrew.org" --json
+  sudo -u zulip python3 create-agent-bot.py \\
+      --admin-email svc-botowner@your-realm.org \\
+      --name "webMaster" --email "webmaster-bot@acp.wardcrew.org" --json
+
+  # Allow upgrading an existing user account to a bot (use with care)
+  sudo -u zulip python3 create-agent-bot.py \\
+      --admin-email svc-botowner@your-realm.org \\
+      --name "webMaster" --email "webmaster@your-realm.org" --allow-upgrade
 
 BATCH JSON FORMAT:
   [
@@ -175,25 +202,32 @@ BATCH JSON FORMAT:
     {"name": "prodMan",      "email": "prodman-bot@acp.wardcrew.org"}
   ]
 
-NOTES:
-  - Must run as the 'zulip' system user (use: sudo -u zulip python3 ...)
-  - Creates accounts with is_bot=True, bot_type=DEFAULT_BOT (Generic bot)
-  - This is equivalent to creating via Zulip web UI Settings → Bots → Add a new bot
-  - If an account exists as a regular user, it will be upgraded to a bot account
-  - API keys are auto-generated by Zulip and returned on creation
+SECURITY NOTES:
+  - Use a dedicated service account for --admin-email, NOT a personal email.
+    If that account is compromised, all bots it owns are at risk.
+  - --allow-upgrade converts human user accounts to bots. This may be irreversible
+    in some Zulip versions. Only use it when you are certain the account is safe to convert.
+  - API keys returned by this script grant full bot access. Store them securely.
         """,
     )
     parser.add_argument("--name",         help="Bot display name (e.g. 'webMaster')")
     parser.add_argument("--email",        help="Bot email (e.g. 'webmaster-bot@acp.wardcrew.org')")
     parser.add_argument("--batch",        help="JSON file with list of {name, email} objects")
-    parser.add_argument("--admin-email",  default="gene.alpert@gmail.com",
-                        help="Admin user email (bot owner). Default: gene.alpert@gmail.com")
+    parser.add_argument("--admin-email",  required=True,
+                        help="Admin user email (bot owner). Required. "
+                             "Use a dedicated service account, NOT a personal email address.")
     parser.add_argument("--realm-id",     type=int, default=None,
                         help="Realm ID (default: auto-detect non-internal realm)")
     parser.add_argument("--dry-run",      action="store_true",
                         help="Show what would be created without making changes")
     parser.add_argument("--json",         action="store_true",
                         help="Output results as JSON (useful for scripting)")
+    parser.add_argument("--allow-upgrade", action="store_true",
+                        help="Allow converting existing regular user accounts to bot accounts. "
+                             "⚠️  Potentially irreversible. Only use when the account is safe to convert.")
+    parser.add_argument("--max-batch",    type=int, default=100,
+                        help="Maximum bots allowed in a single batch run (default: 100). "
+                             "Safety limit to prevent accidental mass creation.")
 
     args = parser.parse_args()
 
@@ -208,6 +242,11 @@ NOTES:
     if args.batch:
         with open(args.batch) as f:
             bots = json.load(f)
+        if len(bots) > args.max_batch:
+            parser.error(
+                f"Batch file contains {len(bots)} entries, exceeding --max-batch limit of {args.max_batch}. "
+                "Increase --max-batch or split into smaller files."
+            )
         for bot in bots:
             result = create_bot(
                 name=bot["name"],
@@ -215,6 +254,7 @@ NOTES:
                 realm=realm,
                 acting_user=acting_user,
                 dry_run=args.dry_run,
+                allow_upgrade=args.allow_upgrade,
             )
             results.append(result)
     else:
@@ -224,6 +264,7 @@ NOTES:
             realm=realm,
             acting_user=acting_user,
             dry_run=args.dry_run,
+            allow_upgrade=args.allow_upgrade,
         )
         results.append(result)
 
