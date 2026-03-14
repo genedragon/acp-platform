@@ -1,0 +1,17 @@
+[
+  {
+    "email": "bot1@your-realm.org",
+    "name": "Bot One",
+    "password": "SecurePass123"
+  },
+  {
+    "email": "bot2@your-realm.org",
+    "name": "Bot Two",
+    "password": "SecurePass123"
+  },
+  {
+    "email": "bot3@your-realm.org",
+    "name": "Bot Three",
+    "password": "SecurePass123"
+  }
+]
