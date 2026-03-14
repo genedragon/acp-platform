@@ -45,7 +45,7 @@ cd acp-platform
 **Prerequisites:**
 - AWS CLI configured with appropriate permissions
 - EC2 key pair in target region
-- Bedrock model access enabled (see [docs/prerequisites.md](docs/prerequisites.md))
+- Bedrock model access enabled (see [docs/deployment-guide.md#prerequisites](docs/deployment-guide.md#prerequisites))
 
 ---
 
