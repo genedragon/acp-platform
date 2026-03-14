@@ -225,8 +225,8 @@ SECURITY NOTES:
     parser.add_argument("--allow-upgrade", action="store_true",
                         help="Allow converting existing regular user accounts to bot accounts. "
                              "⚠️  Potentially irreversible. Only use when the account is safe to convert.")
-    parser.add_argument("--max-batch",    type=int, default=100,
-                        help="Maximum bots allowed in a single batch run (default: 100). "
+    parser.add_argument("--max-batch",    type=int, default=50,
+                        help="Maximum bots allowed in a single batch run (default: 50). "
                              "Safety limit to prevent accidental mass creation.")
 
     args = parser.parse_args()

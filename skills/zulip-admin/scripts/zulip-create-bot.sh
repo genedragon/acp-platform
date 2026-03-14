@@ -38,7 +38,7 @@ BATCH_MODE=false
 DRY_RUN=false
 VERBOSE=false
 PASSWORD_STDIN=false
-MAX_BATCH=100
+MAX_BATCH=50
 
 # Bot password (never set via CLI arg — use env var or --password-stdin)
 ZULIP_BOT_PASSWORD="${ZULIP_BOT_PASSWORD:-}"
@@ -342,7 +342,7 @@ OPTIONS:
     --name NAME            Bot display name (e.g., "Test Bot")
     --password-stdin       Read bot password from stdin (for single-bot mode)
     --batch FILE           Load bots from JSON or CSV file
-    --max-batch N          Maximum bots per run (default: 100)
+    --max-batch N          Maximum bots per run (default: 50)
     --dry-run              Show what would be created without making changes
     --verbose              Enable debug output
     --help                 Show this help message
