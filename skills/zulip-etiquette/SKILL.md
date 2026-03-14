@@ -193,100 +193,62 @@ Zulip topics are threads within a stream. Staying on-topic keeps conversations r
 - ✅ = Done, resolved
 - 🚀 = Let's ship it
 
-### Thinking Reactions: Signaling Work in Progress
+### Thinking Reactions: Always-On Reflex
 
-When you receive a complex request that requires processing time (> 1 second), start a **reaction loop** to signal you're actively working. The loop automatically rotates through emoji every 6 seconds until you stop it.
+**Rule: Start the thinking loop on every message. Stop it before sending your response. No exceptions, no judgment calls.**
 
-**Why use thinking reactions:**
-- User sees instant feedback that you received and are processing their request
-- Eliminates silence/uncertainty during long tasks
-- Clear visual indicator: rotating emoji = working, stopped = done
+This is a reflex, not a decision. Every DM and every @mention gets the thinking loop — regardless of how simple or complex the request is.
 
 **How it works:**
 ```
-User sends message
+Message received (DM or @mention)
   ↓
-Start reaction loop: 🤔 (wait 6s) → 🧠 (wait 6s) → ⏳ (repeat...)
+Start reaction loop immediately: 🤔 → 🧠 → ⏳ (rotates every 6s)
   ↓
-Process request (for however long needed)
+Process request
   ↓
-Stop reaction loop (removes final emoji)
+Stop reaction loop
   ↓
 Send response
 ```
 
-**When to use:**
-
-✅ **Start reaction loop when:**
-- Fetching message history (`zulip_fetch_messages`)
-- Multi-step processing or analysis
-- Inter-agent coordination (waiting for other bots)
-- Any task taking > 1 second
-- **You don't know exact task duration**
-
-❌ **Don't use when:**
-- Simple immediate responses (< 500ms)
-- Quick acknowledgments
-
 **Implementation pattern:**
 
 ```python
-# 1. Start loop (runs automatically in background)
+# 1. Start loop — do this first, before any other work
 zulip_react_loop_start(
-    messageId=user_message_id,
-    icons=["thinking", "brain", "hourglass"]  # default, rotates every 6s
+    messageId=inbound_message_id,
+    icons=["thinking", "brain", "hourglass"]  # default
 )
 
-# 2. Do your work (timing doesn't matter - loop keeps running)
-result = zulip_fetch_messages(channel="eng", topic="api", limit=100)
-analysis = analyze_discussion(result)
+# 2. Do your work
+result = do_whatever_is_needed()
 
-# 3. Stop loop (removes reaction)
-zulip_react_loop_stop(messageId=user_message_id)
+# 3. Stop loop — always, even on error
+zulip_react_loop_stop(messageId=inbound_message_id)
 
 # 4. Send response
 message(action=send, ...)
 ```
+
+**Exceptions (the only ones):**
+- ❌ Heartbeat polls (`HEARTBEAT_OK` silent acks) — no loop needed
+- ❌ `NO_REPLY` responses — nothing to signal
 
 **Tool reference:**
 - `zulip_react_loop_start(messageId, icons=[])` — Start rotating reactions
 - `zulip_react_loop_stop(messageId)` — Stop and clean up
 - `zulip_react_loop_list()` — List active loops (debugging)
 
-**Emoji sequence (default):**
-- `["thinking", "brain", "hourglass"]` — Thinking → Analyzing → Waiting (6 sec each)
-- Custom sequences allowed but stick with defaults for consistency
-
 **Key behaviors:**
-- **6-second rotation:** Fixed interval, works for all task lengths
-- **Auto-stop after 10 minutes:** Prevents orphaned reactions if you crash
-- **Always clean up:** Call `stop` even if processing fails (use error handlers)
+- **6-second rotation:** Fixed interval
+- **Auto-stop after 10 minutes:** Safety net if something crashes
+- **Always clean up:** Call `stop` even if processing fails
 
-**Common pattern example:**
-
-```bash
-# User asks: "Summarize last week's API discussion"
-
-# Start thinking reactions
-zulip_react_loop_start messageId=6123 icons=["thinking","brain","hourglass"]
-
-# Fetch + process (emoji rotates automatically)
-zulip_fetch_messages channel="engineering" topic="api-redesign" limit=200
-# [analyze for 8 seconds - emoji keeps rotating]
-
-# Stop reactions
-zulip_react_loop_stop messageId=6123
-
-# Send summary
-message action=send target="stream:12" topic="api-redesign" message="Summary: ..."
-```
-
-**User experience:**
-- Sees 🤔 appear instantly → knows you got the message
-- Emoji rotates every 6 seconds → knows you're actively working
-- Emoji disappears → response is coming
-
-Much clearer than silent processing!
+**Why always-on:**
+- Instant acknowledgment — user knows their message was received
+- No guessing about whether a task is "complex enough"
+- Consistent, predictable behavior across all interactions
 
 ---
 
@@ -384,4 +346,4 @@ When you first join a Zulip workspace:
 
 ---
 
-**Last updated:** 2026-03-11 15:10 UTC
+**Last updated:** 2026-03-14 11:35 UTC
