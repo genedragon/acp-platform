@@ -13,7 +13,7 @@ Deploy and manage static websites **and reveal.js presentations** on AWS with au
 ✅ **Agent Directive Resolution (`resolve-directives.js`)** — Pre-processing step resolves `//directive:` tags in JSON before generation. Shows mandatory preview + user confirmation before proceeding.  
 ✅ **`//fetch:` directive** — Downloads image/file from a known URL into `assets/`  
 ✅ **`//upload:` directive** — Copies a local file into the presentation assets  
-✅ **`//generate:` directive** — AI image generation via **AWS Bedrock** (`stability.stable-image-core-v1:1`). Prompt-driven, cached, integrated into resolver preview.  
+✅ **`//generate:` directive** — AI image generation via **AWS Bedrock** (`stability.stable-image-core-v1:1` default; `stability.stable-image-ultra-v1:1` for higher quality). Prompt-driven, cached, integrated into resolver preview.  
 ✅ **Directive Cache** — File-based cache in `.directive-cache/` keyed by SHA-256 hash, 7-day TTL. Pass `--fresh` to bust.  
 ✅ **Placeholder Fallback** — Failed resolutions never block a deploy; visible gray placeholder substituted, surfaced in preview.  
 ⚠️ **`//find:` directive** — Web search + best match selection. Documented, not yet implemented (roadmap).  
@@ -362,7 +362,7 @@ Any string value in the JSON (in `image`, `text`, `background`, etc.) can be a d
 |-----------|-------------|--------|
 | `//fetch: <url>` | Downloads the image/file at the URL, saves to `assets/` | ✅ Implemented |
 | `//find: <description>` | Web-searches for a matching image, downloads best result | ⚠️ Roadmap |
-| `//generate: <description>` | AI image generation via AWS Bedrock (`stability.stable-image-core-v1:1`), saves to `assets/` | ✅ Implemented |
+| `//generate: <description>` | AI image generation via AWS Bedrock (default: `stability.stable-image-core-v1:1`; recommended: `stability.stable-image-ultra-v1:1` for higher quality), saves to `assets/` | ✅ Implemented |
 | `//upload: <local-path>` | Copies a local file into `assets/` for inclusion in the build | ✅ Implemented |
 
 ### Examples
@@ -462,10 +462,10 @@ The resolved JSON is what gets passed to `generate-presentation.js`.
 |-----------|--------|-------|
 | `//fetch:` | ✅ Implemented | Downloads from URL |
 | `//upload:` | ✅ Implemented | Copies local file |
-| `//generate:` | ✅ Implemented | Uses AWS Bedrock `stability.stable-image-core-v1:1` |
+| `//generate:` | ✅ Implemented | AWS Bedrock; default `stability.stable-image-core-v1:1`, recommended `stability.stable-image-ultra-v1:1` (higher quality) |
 | `//find:` | ⚠️ Roadmap | Requires `web_search` tool integration |
 
-> **Note on `//generate:`:** Uses AWS Bedrock Stable Image Core. Prompt directly maps to the model's `textToImageParams.text`. Images saved as PNG to `assets/`. Results are cached by directive hash so repeated builds don't re-generate unnecessarily.
+> **Note on `//generate:`:** Uses AWS Bedrock (`us-west-2` region — required for text-to-image). Default model: `stability.stable-image-core-v1:1`. For higher quality (hero images, avatars), use `stability.stable-image-ultra-v1:1`. Other available models: `stability.sd3-5-large-v1:0`, `amazon.titan-image-generator-v2:0`. Prompt maps to `{"prompt": "...", "output_format": "png", "aspect_ratio": "1:1"}` — see webMaster TOOLS.md for full boto3 API reference. Images saved as PNG to `assets/`. Results cached by directive hash — pass `--fresh` to re-generate.
 
 ---
 
