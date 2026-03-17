@@ -36,12 +36,12 @@ There is exactly one restriction:
 
 > ❌ You may not offer the Licensed Work to third parties on a hosted or embedded basis in order to compete with the Licensor's paid version(s) of the Licensed Work.
 
-In plain English: you cannot build and sell a managed "ACP-as-a-service" that competes with WardCrew's own hosted offering.
+In plain English: you cannot offer ACP as a SaaS product to third parties.
 
 **What this does NOT restrict:**
 - Running ACP on your own infrastructure for your own use
 - Charging for services, consulting, or integrations built on top of ACP
-- Reselling hardware/deployments that include ACP (as long as the ACP instance serves your customer, not third parties as a standalone service)
+- Reselling hardware/deployments that include ACP (as long as the ACP instance serves your own needs, not offered as a service to others)
 
 ---
 
@@ -60,20 +60,23 @@ This was chosen as a **two-way door**: we can loosen the terms at any time (e.g.
 **Yes.** You can fork, modify, and redistribute ACP — as long as:
 
 1. You include the original license (BSL 1.1) and attribution
-2. Your fork does not violate the Additional Use Grant (i.e., don't resell it as a competing managed service)
+2. Your fork does not violate the Additional Use Grant (i.e., don't offer it as a SaaS product)
 
 After the Change Date, forks are governed by Apache 2.0 with no restrictions.
 
 ---
 
-## What happens in 2030?
+## What happens on the Change Date?
 
-Each release of ACP has a Change Date set to **four years after that release**. On that date, the code for that release automatically becomes licensed under **Apache 2.0**.
+The Change Date is set to **four years after each release**. On that date, **all restrictions in the BSL license are lifted** and the code is relicensed under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
-This means:
-- Older releases become fully open source progressively
-- By ~2030, the entire codebase will be Apache 2.0
-- No action required from users or WardCrew
+After the Change Date:
+- ✅ The SaaS restriction no longer applies — anyone can offer ACP as a hosted service
+- ✅ No attribution or license-preservation requirements beyond Apache 2.0's minimal terms
+- ✅ The code is fully open source by any definition, including OSI's
+- ✅ No action required from you — the license conversion is automatic
+
+Releases roll over progressively, so the codebase becomes fully Apache 2.0 over time as each release reaches its Change Date.
 
 ---
 
