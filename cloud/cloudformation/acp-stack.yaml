@@ -464,7 +464,7 @@ Resources:
             --certbot-skip \
             --self-signed-cert \
             --hostname="$ZULIP_DOMAIN" \
-            --email="${ZULIP_ADMIN:-admin@$ZULIP_DOMAIN}"
+            --email="admin@$ZULIP_DOMAIN"
 
           # Configure SES email backend
           if [ -n "${SESFromEmail}" ]; then
