@@ -165,7 +165,7 @@ preflight_checks() {
 deploy_openclaw() {
   section "Deploying OpenClaw on AWS"
 
-  TEMPLATE_FILE="cloud/aws/cloudformation/acp-stack.yaml"
+  TEMPLATE_FILE="cloud/cloudformation/acp-stack.yaml"
   if [ ! -f "${TEMPLATE_FILE}" ]; then
     error "CloudFormation template not found: ${TEMPLATE_FILE}"
   fi
