@@ -214,7 +214,7 @@ Resources:
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "ACP Platform — inbound HTTP/HTTPS from SourceCidr, SSH optional"
+      GroupDescription: "ACP Platform - inbound HTTP/HTTPS from SourceCidr, SSH optional"
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
