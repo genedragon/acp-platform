@@ -332,7 +332,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceType
-      ImageId: !FindInMap [AmiMap, !Ref "AWS::Region", arm64]
+      ImageId: "{{resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/arm64/hvm/ebs-gp2/ami-id}}"
       KeyName: !If [HasKeyPair, !Ref KeyPairName, !Ref AWS::NoValue]
       IamInstanceProfile: !Ref InstanceProfile
       SubnetId: !Ref PublicSubnet
