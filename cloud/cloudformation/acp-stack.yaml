@@ -406,7 +406,7 @@ Resources:
           cd ~
           NVM_VERSION="v0.40.1"
           for i in 1 2 3; do
-            curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" \
+            curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${!NVM_VERSION}/install.sh" \
               -o /tmp/nvm-install.sh && break
             sleep 5
           done
@@ -449,8 +449,8 @@ Resources:
 
           # Download and run Zulip installer
           ZULIP_VERSION="10.0-0"
-          curl -fLO "https://download.zulip.com/server/zulip-server-${ZULIP_VERSION}.tar.gz"
-          tar -xf "zulip-server-${ZULIP_VERSION}.tar.gz"
+          curl -fLO "https://download.zulip.com/server/zulip-server-${!ZULIP_VERSION}.tar.gz"
+          tar -xf "zulip-server-${!ZULIP_VERSION}.tar.gz"
 
           ZULIP_DOMAIN="${ZulipDomain}"
           ZULIP_ADMIN="${ZulipAdminEmail}"
@@ -460,7 +460,7 @@ Resources:
               http://169.254.169.254/latest/meta-data/public-hostname 2>/dev/null || echo "localhost")
           fi
 
-          "zulip-server-${ZULIP_VERSION}/scripts/setup/install" \
+          "zulip-server-${!ZULIP_VERSION}/scripts/setup/install" \
             --certbot-skip \
             --self-signed-cert \
             --hostname="$ZULIP_DOMAIN" \
