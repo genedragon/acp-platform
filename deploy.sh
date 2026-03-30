@@ -183,13 +183,13 @@ deploy_openclaw() {
     fi
   fi
 
-  PARAMS="ParameterKey=DeploymentMode,ParameterValue=${DEPLOY_MODE}"
+  PARAMS="DeploymentMode=${DEPLOY_MODE}"
   if [ -n "${KEY_PAIR}" ]; then
-    PARAMS="${PARAMS} ParameterKey=KeyPairName,ParameterValue=${KEY_PAIR}"
+    PARAMS="${PARAMS} KeyPairName=${KEY_PAIR}"
   fi
-  PARAMS="${PARAMS} ParameterKey=InstanceType,ParameterValue=${INSTANCE_TYPE}"
-  PARAMS="${PARAMS} ParameterKey=EnablePVM,ParameterValue=${ENABLE_PVM}"
-  PARAMS="${PARAMS} ParameterKey=SourceCidr,ParameterValue=${SOURCE_CIDR}"
+  PARAMS="${PARAMS} InstanceType=${INSTANCE_TYPE}"
+  PARAMS="${PARAMS} EnablePVM=${ENABLE_PVM}"
+  PARAMS="${PARAMS} SourceCidr=${SOURCE_CIDR}"
 
   log "Deploying CloudFormation stack: ${STACK_NAME}"
   aws cloudformation deploy \
