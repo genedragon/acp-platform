@@ -1,0 +1,30 @@
+{
+  "_comment": "Merge these sections into your ~/.openclaw/openclaw.json",
+
+  "agents.list[] — add this entry": {
+    "id": "AGENT-ID",
+    "name": "agentName",
+    "workspace": "~/.openclaw/workspace-AGENT-ID",
+    "model": {
+      "primary": "amazon-bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+    }
+  },
+
+  "channels.zulip.accounts — add this entry": {
+    "AGENT-ID": {
+      "botEmail": "AGENT-ID-bot@YOUR-DOMAIN",
+      "botToken": "YOUR-BOT-API-KEY",
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "open"
+    }
+  },
+
+  "bindings[] — add this entry": {
+    "agentId": "AGENT-ID",
+    "match": {
+      "channel": "zulip",
+      "accountId": "AGENT-ID"
+    }
+  }
+}
