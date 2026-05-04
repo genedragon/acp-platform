@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  ACP webmaster Agent — S3 + CloudFront infrastructure for static site hosting.
+  Deploys a private S3 bucket with CloudFront CDN and Origin Access Control (OAC).
+
+Parameters:
+  BucketNamePrefix:
+    Type: String
+    Default: acp-sites
+    Description: Prefix for the S3 bucket name. Account ID is appended automatically.
+    AllowedPattern: ^[a-z0-9][a-z0-9-]{1,50}$
+    ConstraintDescription: Lowercase alphanumeric and hyphens, 2-51 chars.
+
+  EnableCloudFront:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Set to false to create only the S3 bucket (no CDN).
+
+  DefaultRootObject:
+    Type: String
+    Default: index.html
+    Description: Default document served at the root path.
+
+Conditions:
+  CreateCloudFront: !Equals [!Ref EnableCloudFront, 'true']
+
+Resources:
+
+  # ── S3 Bucket (private — no public access) ──────────────────────────
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${BucketNamePrefix}-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: acp:agent
+          Value: webmaster
+        - Key: acp:purpose
+          Value: static-site-hosting
+
+  # ── S3 Bucket Policy (allow CloudFront OAC only) ────────────────────
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: CreateCloudFront
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${SiteBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  # ── CloudFront Origin Access Control ─────────────────────────────────
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Condition: CreateCloudFront
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${BucketNamePrefix}-oac'
+        Description: OAC for ACP webmaster S3 bucket
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ── CloudFront Distribution ──────────────────────────────────────────
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Condition: CreateCloudFront
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub 'ACP webmaster — ${BucketNamePrefix}'
+        DefaultRootObject: !Ref DefaultRootObject
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100  # US, Canada, Europe (cheapest)
+
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''  # Empty — using OAC instead of OAI
+
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03  # SecurityHeadersPolicy
+
+        # Custom error page — serve index.html for SPAs
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
+          - ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+            ErrorCachingMinTTL: 60
+
+      Tags:
+        - Key: acp:agent
+          Value: webmaster
+
+Outputs:
+  BucketName:
+    Description: S3 bucket for site content
+    Value: !Ref SiteBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketName'
+
+  BucketArn:
+    Description: S3 bucket ARN
+    Value: !GetAtt SiteBucket.Arn
+
+  CloudFrontDomain:
+    Condition: CreateCloudFront
+    Description: CloudFront distribution domain (use this as your site URL)
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDomain'
+
+  DistributionId:
+    Condition: CreateCloudFront
+    Description: CloudFront distribution ID (for cache invalidations)
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-DistributionId'

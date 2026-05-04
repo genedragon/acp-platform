@@ -1,0 +1,30 @@
+{
+  "_comment": "Merge these sections into your ~/.openclaw/openclaw.json",
+
+  "agents.list[] — add this entry": {
+    "id": "sysadmin",
+    "name": "sysAdmin",
+    "workspace": "~/.openclaw/workspace-sysadmin",
+    "model": {
+      "primary": "amazon-bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+    }
+  },
+
+  "channels.zulip.accounts — add this entry": {
+    "sysadmin": {
+      "botEmail": "sysadmin-bot@YOUR-DOMAIN",
+      "botToken": "YOUR-SYSADMIN-BOT-API-KEY",
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "groupPolicy": "allowlist"
+    }
+  },
+
+  "bindings[] — add this entry": {
+    "agentId": "sysadmin",
+    "match": {
+      "channel": "zulip",
+      "accountId": "sysadmin"
+    }
+  }
+}
