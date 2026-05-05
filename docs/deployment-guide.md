@@ -549,7 +549,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=%h
-ExecStart=/usr/local/bin/openclaw gateway start
+ExecStart=/usr/local/bin/openclaw gateway run
 Restart=always
 RestartSec=10
 Environment=HOME=/home/ubuntu

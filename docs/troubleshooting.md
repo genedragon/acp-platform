@@ -266,3 +266,34 @@ echo "Zulip: $(curl -s https://YOUR-DOMAIN/api/v1/server_settings 2>/dev/null | 
 echo "PostgreSQL: $(psql --version | head -1)"
 echo "OS: $(uname -srm)"
 ```
+
+---
+
+## Lesson 14: Use `gateway run` (not `start`) in systemd ExecStart
+
+**Symptom:** Gateway crashes every 3 seconds with exit code 1. No application errors in journal — only systemd lifecycle messages.
+
+**Root Cause:** `openclaw gateway start` is a **service-management** command — it tells systemd to start the service. When systemd itself runs it as ExecStart, you get a circular dependency: process delegates to systemd → exits → systemd restarts → repeat.
+
+**Fix:**
+```ini
+# WRONG — causes crash loop
+ExecStart=/usr/local/bin/openclaw gateway start
+
+# CORRECT — foreground/supervised mode
+ExecStart=/usr/local/bin/openclaw gateway run
+```
+
+| Command | Purpose | Use In |
+|---------|---------|--------|
+| `openclaw gateway start` | Service management — tells systemd to start | Interactive shell only |
+| `openclaw gateway run` | Foreground execution — runs the gateway process | systemd ExecStart, Docker CMD |
+
+**Also check for:** Orphaned openclaw processes from manual runs holding port 18789:
+```bash
+ps aux | grep openclaw | grep -v grep
+kill -9 <orphan PIDs>
+systemctl --user restart openclaw-gateway
+```
+
+**Related:** Requires `XDG_RUNTIME_DIR=/run/user/1000` and `DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus` in the service Environment (OpenClaw's self-check uses D-Bus).
