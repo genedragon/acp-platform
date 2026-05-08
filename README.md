@@ -23,16 +23,6 @@ Deploy on your own AWS infrastructure. Your data never leaves your account.
 
 ---
 
-## Three Deployment Modes
-
-| Mode | Use Case | P2P Chat | Sandbox |
-|------|----------|----------|---------|
-| **Personal** | Second brain, personal assistant | N/A | Optional |
-| **Team** | Org collaboration, workflow automation | Essential | Required |
-| **Event** | Conference, wedding, group travel | Fully configurable | Configurable |
-
----
-
 ## Quick Start
 
 ```bash
@@ -43,20 +33,42 @@ cd acp-platform
 ```
 
 **Prerequisites:**
-- AWS CLI configured with appropriate permissions
+- An AWS account with appropriate permissions
 - EC2 key pair in target region
 - Bedrock model access enabled (see [Bedrock Auth Guide](docs/bedrock-auth.md))
 
-**Two paths to deploy:**
+For the full walkthrough, see the [Deployment Guide](docs/deployment-guide.md) — a 9-phase guide with checkpoints, rollback, and troubleshooting. A coding agent (Kiro, Claude Code) can follow it step-by-step.
 
-> **New to ACP?** The deployment guide walks you through everything — including a coding agent (Kiro, Claude Code) can follow it step-by-step using the checkpoint markers.
+> **Pinned versions:** All scripts read from [`versions.env`](versions.env). Update that file when upgrading dependencies.
 
-| Path | For | What It Does |
-|------|-----|-------------|
-| `./deploy.sh` | Happy path | Automated CloudFormation deploy — infra + OpenClaw in ~20 min |
-| [Deployment Guide](docs/deployment-guide.md) | Deep dive / debugging | Full 9-phase walkthrough with checkpoints, rollback, and troubleshooting |
+---
 
-The script handles infrastructure (Phase 0). The guide covers everything: Zulip install, OpenClaw plugin setup, DNS, SSL, Bedrock auth, and user management — including hard-won lessons from real deployments.
+## Agent-Assisted Deployment (Easy Mode)
+
+Don't want to run commands yourself? Let a coding agent deploy ACP for you.
+
+### Prerequisites
+
+- An AWS account with appropriate permissions
+- Bedrock model access enabled (see [Bedrock Auth Guide](docs/bedrock-auth.md))
+
+### Steps
+
+1. **Install a coding agent** — Deployment has been tested end-to-end using the free tier of [Kiro](https://kiro.dev), but any agent that can run terminal commands works (Claude Code, Cursor, etc.)
+
+2. **Configure AWS CLI access:**
+   ```bash
+   aws sso login --profile <your-profile>
+   # or
+   aws configure
+   ```
+   Confirm access: `aws sts get-caller-identity`
+
+3. **Give your agent these instructions:**
+
+   > Clone and deploy ACP to my AWS account. Follow the README and deployment guide at https://github.com/genedragon/acp-platform — use `./deploy.sh --mode=personal --key-pair=MY_KEY_PAIR` for the happy path, or follow the full deployment guide for custom configuration.
+
+The agent will handle cloning, dependency installation, CloudFormation bootstrapping, and deployment. Sit back and let it work. 🚀
 
 ---
 
@@ -64,23 +76,7 @@ The script handles infrastructure (Phase 0). The guide covers everything: Zulip 
 
 Full architecture: [docs/architecture.md](docs/architecture.md)
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                  ACP Instance (EC2 t4g.large)            │
-│                                                          │
-│  ┌──────────────────┐     ┌───────────────────────────┐  │
-│  │  OpenClaw Gateway │     │      Zulip Server         │  │
-│  │  (127.0.0.1:18789)│     │  nginx · PostgreSQL 16    │  │
-│  │                   │◄───►│  Redis · RabbitMQ         │  │
-│  │  @openclaw/zulip  │     │  Django · Memcached       │  │
-│  │  plugin           │     │                           │  │
-│  └──────────────────┘     └───────────────────────────┘  │
-│                                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  AWS: Bedrock (LLM) · S3 (files) · IAM (auth)     │  │
-│  └────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────┘
-```
+![ACP Architecture](assets/architecture.svg)
 
 ---
 

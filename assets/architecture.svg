@@ -1,0 +1,66 @@
+<svg viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif">
+
+  <!-- EC2 Instance container -->
+  <rect x="30" y="20" width="660" height="460" rx="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="360" y="52" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b" letter-spacing="0.5">ACP Instance</text>
+  <text x="360" y="70" text-anchor="middle" font-size="11" fill="#94a3b8">Single EC2 · Self-hosted · Your AWS account</text>
+
+  <!-- OpenClaw Gateway (left) -->
+  <rect x="50" y="95" width="270" height="160" rx="12" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="170" y="122" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">OpenClaw</text>
+  <text x="170" y="138" text-anchor="middle" font-size="10" fill="#7c3aed">Agent Runtime</text>
+  
+  <text x="170" y="168" text-anchor="middle" font-size="11" fill="#475569">Multi-agent gateway</text>
+  <text x="170" y="186" text-anchor="middle" font-size="11" fill="#475569">Tool orchestration</text>
+  <text x="170" y="204" text-anchor="middle" font-size="11" fill="#475569">Session &amp; memory</text>
+  <text x="170" y="222" text-anchor="middle" font-size="11" fill="#475569">Skills system</text>
+
+  <!-- @openclaw/zulip plugin — rotated 90° on right edge of OpenClaw box -->
+  <rect x="304" y="115" width="24" height="120" rx="4" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1"/>
+  <text x="316" y="175" text-anchor="middle" font-size="9" font-weight="600" fill="#6d28d9" transform="rotate(-90, 316, 175)">@openclaw/zulip</text>
+
+  <!-- Zulip Server (right) -->
+  <rect x="390" y="95" width="270" height="160" rx="12" fill="#ffffff" stroke="#0891b2" stroke-width="2"/>
+  <text x="525" y="122" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">Zulip</text>
+  <text x="525" y="138" text-anchor="middle" font-size="10" fill="#0891b2">Collaboration UI</text>
+
+  <text x="525" y="168" text-anchor="middle" font-size="11" fill="#475569">Channels &amp; topics</text>
+  <text x="525" y="186" text-anchor="middle" font-size="11" fill="#475569">Human ↔ agent messaging</text>
+  <text x="525" y="204" text-anchor="middle" font-size="11" fill="#475569">Threads &amp; real-time events</text>
+  <text x="525" y="222" text-anchor="middle" font-size="11" fill="#475569">Full search &amp; history</text>
+
+  <!-- Arrows: plugin to Zulip -->
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <polygon points="0,0 7,2.5 0,5" fill="#64748b"/>
+    </marker>
+    <marker id="arrPurple" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <polygon points="0,0 7,2.5 0,5" fill="#4338ca"/>
+    </marker>
+  </defs>
+  <line x1="330" y1="168" x2="386" y2="168" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="390" y1="180" x2="334" y2="180" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Amazon Bedrock (below OpenClaw) -->
+  <rect x="50" y="290" width="270" height="80" rx="12" fill="#1e1b4b" stroke="#4338ca" stroke-width="2"/>
+  <text x="185" y="318" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Amazon Bedrock</text>
+  <text x="185" y="338" text-anchor="middle" font-size="10" fill="#c7d2fe">10+ foundation models · Unified API</text>
+  <text x="185" y="356" text-anchor="middle" font-size="10" fill="#a5b4fc">Claude · Nova · Llama · Mistral</text>
+
+  <!-- Bidirectional arrow: OpenClaw ↔ Bedrock -->
+  <line x1="175" y1="255" x2="175" y2="286" stroke="#4338ca" stroke-width="1.5" marker-end="url(#arrPurple)"/>
+  <line x1="195" y1="290" x2="195" y2="259" stroke="#4338ca" stroke-width="1.5" marker-end="url(#arrPurple)"/>
+
+  <!-- Infrastructure bar at bottom -->
+  <rect x="50" y="400" width="620" height="60" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.5"/>
+  <text x="360" y="422" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Infrastructure &amp; Security</text>
+  
+  <text x="145" y="444" text-anchor="middle" font-size="10" fill="#475569">S3 file storage</text>
+  <text x="290" y="444" text-anchor="middle" font-size="10" fill="#475569">IAM roles</text>
+  <text x="430" y="444" text-anchor="middle" font-size="10" fill="#475569">PVM permissions</text>
+  <text x="575" y="444" text-anchor="middle" font-size="10" fill="#475569">CloudFormation</text>
+
+  <circle cx="215" cy="442" r="2" fill="#cbd5e1"/>
+  <circle cx="360" cy="442" r="2" fill="#cbd5e1"/>
+  <circle cx="505" cy="442" r="2" fill="#cbd5e1"/>
+</svg>
