@@ -18,6 +18,7 @@ ACP is a self-hosted platform where **humans and AI agents collaborate in real c
 - **[Zulip](https://zulip.com)** — structured channel/topic messaging (the collaboration UX)
 - **[Amazon Bedrock](https://aws.amazon.com/bedrock/)** — 10+ foundation models, one unified API, no API keys
 - **[PVM](https://github.com/genedragon/permissions-vending-machine)** — temporary IAM permissions with human-in-the-loop approval
+- **[acp-brain](https://github.com/genedragon/acp-brain)** — persistent AI memory layer with semantic search, provenance tracking, and Safe Agent Memory Contract
 
 Deploy on your own AWS infrastructure. Your data never leaves your account.
 
@@ -118,6 +119,7 @@ See [agents/README.md](agents/) for full details on the agent packaging system.
 | Zulip | [zulip/zulip](https://github.com/zulip/zulip) | Collaboration UI |
 | openclaw-zulip | [genedragon/openclaw-zulip](https://github.com/genedragon/openclaw-zulip) | Native Zulip channel plugin for OpenClaw |
 | PVM | [genedragon/permissions-vending-machine](https://github.com/genedragon/permissions-vending-machine) | Temporary IAM permissions |
+| acp-brain | [genedragon/acp-brain](https://github.com/genedragon/acp-brain) | Persistent AI memory layer (MCP server) |
 
 ---
 
